@@ -12,6 +12,8 @@ sourceCompatibility = '1.8'
 mainClassName = 'io.vertx.core.Launcher'
 
 def vertxVersion = '3.5.1'
+def eclipseCollectionsVersion = '9.1.0'
+def commercetoolsJvmSdkVersion = "1.30.0"
 def mainVerticleName = 'com.commercetools.bulkpricer.BulkPricer'
 def watchForChange = 'src/**/*'
 def doOnChange = './gradlew classes'
@@ -19,6 +21,10 @@ def doOnChange = './gradlew classes'
 dependencies {
   compile "io.vertx:vertx-core:$vertxVersion"
   compile "io.vertx:vertx-web:$vertxVersion"
+  compile "org.eclipse.collections:eclipse-collections-api:$eclipseCollectionsVersion"
+  compile "org.eclipse.collections:eclipse-collections:$eclipseCollectionsVersion"
+  compile "com.commercetools.sdk.jvm.core:commercetools-models:$commercetoolsJvmSdkVersion"
+  compile "com.commercetools.sdk.jvm.core:commercetools-sdk-base:$commercetoolsJvmSdkVersion"
   testCompile "junit:junit:4.12"
   testCompile "io.vertx:vertx-unit:$vertxVersion"
 }
