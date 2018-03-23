@@ -52,7 +52,7 @@ public class BulkPricer extends AbstractVerticle {
     try {
       JsonObject bodyJson = routingContext.getBody().toJsonObject();
       CtpExtensionRequestBody extensionRequest = bodyJson.mapTo(CtpExtensionRequestBody.class);
-      Cart cart = extensionRequest.resource.getObj();
+      Cart cart = extensionRequest.getResource().getObj();
 
       // TODO damn the customer Group is just a reference. -> this will never match without fetching it separately and caching it
       // String groupKey = cart.getCustomerGroup().getObj().getKey();

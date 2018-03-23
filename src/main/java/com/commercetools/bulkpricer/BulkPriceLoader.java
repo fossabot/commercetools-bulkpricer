@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 public class BulkPriceLoader extends AbstractVerticle {
@@ -74,7 +75,7 @@ public class BulkPriceLoader extends AbstractVerticle {
     }
   }
 
-  private IntIntHashMap readRemotePrices(String fileURI, CurrencyUnit currency) throws IOException, ParseException{
+  public static IntIntHashMap readRemotePrices(String fileURI, CurrencyUnit currency) throws IOException, ParseException{
     IntIntHashMap prices = new IntIntHashMap();
 
     InputStream remoteStream = new URL(fileURI).openConnection().getInputStream();
@@ -87,13 +88,13 @@ public class BulkPriceLoader extends AbstractVerticle {
     return prices;
   }
 
-  private IntIntPair parseLine(String line, CurrencyUnit currency) throws ParseException{
+  public static IntIntPair parseLine(String line, CurrencyUnit currency) throws ParseException{
     int separatorPosition = line.indexOf(",");
     String keyStr = line.substring(0,separatorPosition);
     String valStr = line.substring(separatorPosition + 1, line.length());
 
     int sku = NumberFormat.getIntegerInstance().parse(keyStr).intValue();
-    MonetaryAmount price = FastMoney.of(NumberFormat.getCurrencyInstance().parse(valStr), currency);
+    MonetaryAmount price = FastMoney.of(NumberFormat.getNumberInstance(Locale.US).parse(valStr), currency);
     int centAmount = new MoneyRepresentation(price).getCentAmount();
     return PrimitiveTuples.pair(sku, centAmount);
   }

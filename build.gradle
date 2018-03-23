@@ -28,6 +28,7 @@ dependencies {
   compile "com.commercetools.sdk.jvm.core:commercetools-sdk-base:$commercetoolsJvmSdkVersion"
   testCompile "junit:junit:4.12"
   testCompile "io.vertx:vertx-unit:$vertxVersion"
+  testCompile "io.vertx:vertx-web-client:$vertxVersion"
 }
 
 shadowJar {

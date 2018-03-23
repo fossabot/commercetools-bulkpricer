@@ -4,10 +4,19 @@ import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.models.Reference;
 
 public class CtpExtensionRequestBody {
-  public String action;
-  public Reference<Cart> resource;
-  public CtpExtensionRequestBody(String act, Reference<Cart> ref){
-    action = act;
-    resource = ref;
+  private String action;
+  private Reference<Cart> resource;
+
+  public String getAction() {
+    return action;
+  }
+
+  public Reference<Cart> getResource() {
+    return resource;
+  }
+
+  public CtpExtensionRequestBody(String actionParam, Reference<Cart> cartReference){
+    action = actionParam;
+    resource = cartReference;
   }
 }
