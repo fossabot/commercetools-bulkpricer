@@ -39,6 +39,7 @@ public class BulkPriceLoader extends AbstractVerticle {
   }
 
   private void handleLoadRequest(Message<String> message) {
+    // TODO parse into PriceLoadRequest object
     JsonObject params = new JsonObject(message.body());
     String correlationId = message.headers().get("X-Correlation-ID");
     DeliveryOptions msgOptions = new DeliveryOptions().addHeader("X-Correlation-ID", correlationId);
@@ -52,9 +53,9 @@ public class BulkPriceLoader extends AbstractVerticle {
     } else {
       message.reply(new JsonObject().put("status", 202)
         .put("message", "accepted import job"), msgOptions);
-      LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap(groupKey);
+      LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
       try {
-        sharedPrices.put(groupKey, new ShareablePriceList(readRemotePrices(fileURI,currency)));
+        sharedPrices.put(groupKey, new ShareablePriceList(readRemotePrices(fileURI,currency), currency));
       } catch (IOException e) {
         vertx.eventBus().send("bulkpricer.loadresults", new JsonObject().put("status", 500)
           .put("message", "IO error loading remote price list")

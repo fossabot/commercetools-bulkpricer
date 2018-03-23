@@ -1,13 +1,21 @@
 package com.commercetools.bulkpricer;
 
+import com.commercetools.bulkpricer.com.commercetools.bulkpricer.apiModel.CtpExtensionRequestBody;
+import com.commercetools.bulkpricer.com.commercetools.bulkpricer.apiModel.CtpExtensionUpdateRequestedResponse;
+import io.sphere.sdk.carts.Cart;
+import io.sphere.sdk.carts.LineItem;
+import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.LocalMap;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import org.javamoney.moneta.Money;
 
+import javax.money.MonetaryAmount;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,67 +26,72 @@ public class BulkPricer extends AbstractVerticle {
   @Override
   public void start() {
 
-    setUpInitialData();
-
     Router router = Router.router(vertx);
-
     router.route().handler(BodyHandler.create());
-    router.get("/products/:productID").handler(this::handleGetProduct);
-    router.put("/products/:productID").handler(this::handleAddProduct);
-    router.get("/products").handler(this::handleListProducts);
+
+    router.post("/prices/for-cart/extend-with-external-prices")
+      .consumes("application/json")
+      .produces("application/json")
+      .handler(this::handleExtendCartWithExternalPrices);
+
+    router.post("prices/imports/:groupId")
+      .consumes("application/json")
+      .produces("application/json")
+      .handler(this::handleImportJobSubmission);
 
     vertx.createHttpServer().requestHandler(router::accept).listen(8080);
   }
 
-  private void handleGetProduct(RoutingContext routingContext) {
-    String productID = routingContext.request().getParam("productID");
-    HttpServerResponse response = routingContext.response();
-    if (productID == null) {
-      sendError(400, response);
-    } else {
-      JsonObject product = products.get(productID);
-      if (product == null) {
-        sendError(404, response);
-      } else {
-        response.putHeader("content-type", "application/json").end(product.encodePrettily());
+  private void handleExtendCartWithExternalPrices(RoutingContext routingContext) {
+    // 200 or 201 for successful responses, 400 for validation failures
+    JsonObject bodyJson = routingContext.getBody().toJsonObject();
+    CtpExtensionRequestBody extensionRequest = bodyJson.mapTo(CtpExtensionRequestBody.class);
+    Cart cart = extensionRequest.resource.getObj();
+    // TODO damn the customer Group is just a reference. -> this will never match without fetching it separately and caching it
+    // String groupKey = cart.getCustomerGroup().getObj().getKey();
+    // interim approach to test:
+
+    CtpExtensionUpdateRequestedResponse extensionResponse = new CtpExtensionUpdateRequestedResponse();
+
+    cart.getLineItems().forEach((LineItem lineItem) -> {
+      String sku = lineItem.getVariant().getSku();
+      String groupKey = cart.getCustomerGroup().getId();
+      String customerId = cart.getCustomerId();
+      try {
+        int skuInt = NumberFormat.getIntegerInstance().parse(sku).intValue();
+        if (groupKey != null){
+          MonetaryAmount groupPrice = lookUpPrice(groupKey, skuInt);
+          if (groupPrice != null){ extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem,groupPrice));}
+        }
+        if (customerId != null){
+          MonetaryAmount customerPrice = lookUpPrice(customerId, skuInt);
+          if (customerPrice != null){ extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem,customerPrice)); }
+        }
+      } catch (ParseException e) {
+        //
+        routingContext.response().setStatusCode(400).setStatusMessage("External Pricing is only supported for numeric integer SKUs with this service");
       }
-    }
+
+      routingContext.response()
+        .setStatusCode(200)
+        .end(JsonObject.mapFrom(extensionResponse).toBuffer());
+    });
   }
 
-  private void handleAddProduct(RoutingContext routingContext) {
-    String productID = routingContext.request().getParam("productID");
-    HttpServerResponse response = routingContext.response();
-    if (productID == null) {
-      sendError(400, response);
-    } else {
-      JsonObject product = routingContext.getBodyAsJson();
-      if (product == null) {
-        sendError(400, response);
-      } else {
-        products.put(productID, product);
-        response.end();
-      }
-    }
+  private MonetaryAmount lookUpPrice(String groupKey, int sku){
+    LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
+    if(sharedPrices == null){return null;}
+    ShareablePriceList groupPriceList = sharedPrices.get(groupKey);
+    if(groupPriceList == null){return null;}
+    int price = groupPriceList.getPrices().get(sku);
+    return Money.ofMinor(groupPriceList.getCurrency(), price);
   }
 
-  private void handleListProducts(RoutingContext routingContext) {
-    JsonArray arr = new JsonArray();
-    products.forEach((k, v) -> arr.add(v));
-    routingContext.response().putHeader("content-type", "application/json").end(arr.encodePrettily());
+  private void handleImportJobSubmission(RoutingContext routingContext) {
+    vertx.eventBus().publish("bulkpricer.loadrequests", routingContext.getBodyAsString());
+    // TODO pass back the message response and don't set it here.
+    routingContext.response().setStatusCode(202).end();
   }
 
-  private void sendError(int statusCode, HttpServerResponse response) {
-    response.setStatusCode(statusCode).end();
-  }
-
-  private void setUpInitialData() {
-    addProduct(new JsonObject().put("id", "prod3568").put("name", "Egg Whisk").put("price", 3.99).put("weight", 150));
-    addProduct(new JsonObject().put("id", "prod7340").put("name", "Tea Cosy").put("price", 5.99).put("weight", 100));
-    addProduct(new JsonObject().put("id", "prod8643").put("name", "Spatula").put("price", 1.00).put("weight", 80));
-  }
-
-  private void addProduct(JsonObject product) {
-    products.put(product.getString("id"), product);
-  }
 }
 
