@@ -1,28 +1,20 @@
-= Vert.x Gradle Starter
+= A Bulk Price Cache for commercetools
 
-This project is a template to start your own Vert.x project using Gradle.
+This is a vert.x based HTTP service providing an commercetools API extension.
+
+It is intended to keep large amounts of customer group (price list) and customer specific SKU prices in memory very efficiently.
+I.e. it's designed for cases where commercetools is not the system of record for customer specific prices and the number of prices per SKU is high.
+
+See BulkPricer.java for the HTTP API paths (To be documented here or in an OpenAPI spec)
+
+The API extension serves cart creations and updates and overrides the cart price with an external price if it finds one for the given customer group or customer ID in its cache.
+It does not complain if it does not find a more specific price, assuming the base price can be offered in any case.
+
+It is based on the vert.x Gradle Starter (forgot to purge the git history, still there). Originally a learning project.
 
 == Prerequisites
 
 * JDK 8+
-
-== Getting started
-
-Create your project with:
-
-[source]
-----
-git clone https://github.com/vert-x3/vertx-gradle-starter.git PROJECT_NAME
-----
-
-Replace `PROJECT_NAME` with the name of your project.
-
-On Linux and MacOSx (or Windows with `bash`), if you want to go faster and generate an already configured project run:
-
-[source]
-----
-curl http://vertx.io/assets/starter-scripts/create-vertx-project-gradle.sh -o vertx-create-gradle-project.sh; bash vertx-create-gradle-project.sh
-----
 
 == Running the project
 
@@ -33,23 +25,17 @@ Once you have retrieved the project, you can check that everything works with:
 ./gradlew test run
 ----
 
-The command compiles the project and runs the tests, then  it launches the application, so you can check by yourself. Open your browser to http://localhost:8080. You should see a _Hello World_ message.
+The command compiles the project and runs the tests, then  it launches the application.
 
 == Anatomy of the project
 
 The project contains:
 
 * the Gradle project and its configuration (`build.gradle`)
-* a _main_ verticle file (src/main/java/io/vertx/starter/MainVerticle.java)
-* a unit test (src/main/test/io/vertx/starter/MainVerticleTest.java)
+* a _main_ verticle file (src/main/java/io/vertx/starter/MainVerticle.java), which starts the other Verticles
+* a BulkPricer Verticle that represents the HTTP API and handles the direct responses
+* a BulkPriceLoader Verticle that receives messages on the vert.x event bus to load a new price file for a specific price group from an external HTTP location in the background.
 
-== Start to hack
-
-1. Delete the `.git` directory
-2. Open the `build.gradle` file and customize the `version`. You can also change the `mainVerticleName` variable to use your own package name and verticle class.
-3. Run `./gradlew run`.
-
-This last command relaunches Gradle and the application as soon as you change something in `src/main`.
 
 == Building the project
 
@@ -62,28 +48,12 @@ To build the project, just use:
 It generates a _fat-jar_ in the `build/libs` directory.
 
 
-
-
 -----------
-This project shows how to use the Vert.x 3.2 redeploy feature. Vert.x watches for file changes and will then compile these changes. The hello world verticle will be redeployed automatically.
+This project shows how to use the Vert.x 3.2 redeploy feature. Vert.x watches for file changes and will then compile these changes.
+The verticles will be redeployed automatically.
 Simply start the application with:
 
     ./gradlew run
 
-Now point your browser at http://localhost:8080. Then you can make changes to the hello world verticle and reload the browser.
+Now point your browser at http://localhost:8080. Then you can make changes to the verticles and reload the browser.
 
-The whole configuration for this is rather simple:
-
-    mainClassName = 'io.vertx.core.Launcher'
-    def mainVerticleName = 'io.vertx.example.HelloWorldVerticle'
-
-    // Vert.x watches for file changes in all subdirectories
-    // of src/ but only for files with .java extension
-    def watchForChange = 'src/**/*.java'
-
-    // Vert.x will call this task on changes
-    def doOnChange = './gradlew classes'
-
-    run {
-        args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
-    }
