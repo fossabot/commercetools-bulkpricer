@@ -1,24 +1,22 @@
 package com.commercetools.bulkpricer.apimodel;
 
-import io.sphere.sdk.products.Price;
-
 import javax.money.MonetaryAmount;
 
 public class PriceResponse {
-  private Price price;
+  private MonetaryAmount amount;
   private String groupKey;
   private String sku;
   private String lastModified;
 
   public PriceResponse(MonetaryAmount amount, String groupKey, String sku, String lastModified){
-    price = Price.of(amount);
+    this.amount = amount;
     this.groupKey = groupKey;
     this.sku = sku;
     this.lastModified = lastModified;
   }
 
-  public Price getPrice() {
-    return price;
+  public MonetaryAmount getAmount() {
+    return amount;
   }
 
   public String getGroupKey() {

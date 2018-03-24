@@ -10,7 +10,6 @@ import io.vertx.ext.web.client.WebClient;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -35,13 +34,12 @@ public class BulkPricerTest {
   }
 
   @Test
-  @Ignore
   public void testCartExtensionRoundtrip(TestContext tc) {
     Async async = tc.async();
     WebClient httpClient = WebClient.create(vertx);
     httpClient.post(8080, "localhost", "/prices/for-cart/extend-with-external-prices")
       .putHeader("content-type", "application/json")
-      .sendJson(ExampleData.getTestExtensionRequestBody(), asyncResult -> {
+      .sendBuffer(Buffer.buffer(ExampleData.getCtpExtensionRequestBodyAsString()), asyncResult -> {
         if (asyncResult.succeeded()) {
           HttpResponse<Buffer> response = asyncResult.result();
           tc.assertEquals(response.statusCode(), 200);

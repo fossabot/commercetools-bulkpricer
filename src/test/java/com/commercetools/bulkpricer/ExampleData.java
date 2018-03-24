@@ -1,10 +1,6 @@
 package com.commercetools.bulkpricer;
 
-import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
-import io.sphere.sdk.carts.Cart;
-import io.sphere.sdk.models.Reference;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonObject;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -12,12 +8,23 @@ import java.util.Random;
 
 public class ExampleData {
 
-  public static CtpExtensionRequestBody getTestExtensionRequestBody(){
-    return new CtpExtensionRequestBody("Update", Reference.of("cart", getTestCart()));
+  public static String getCtpExtensionRequestBodyAsString(){
+    return "{\n" +
+      "  \"action\": \"Update\",\n" +
+      "  \"resource\": " + getTestCartReferenceAsString() +
+      "  }";
   }
 
-  public static Cart getTestCart(){
-    JsonObject cartJson = new JsonObject("{\n" +
+  public static String getTestCartReferenceAsString(){
+    return "{\n" +
+      "  \"typeId\": \"cart\",\n" +
+      "  \"id\": \"d3eb6d7c-e7a1-4143-b2e0-ef84db2b507e\",\n" +
+      "  \"obj\": " + getTestCartAsJsonString() +
+      "  }";
+  }
+  
+  public static String getTestCartAsJsonString(){
+    return "{\n" +
       "  \"type\": \"Cart\",\n" +
       "  \"id\": \"d3eb6d7c-e7a1-4143-b2e0-ef84db2b507e\",\n" +
       "  \"version\": 6,\n" +
@@ -193,8 +200,7 @@ public class ExampleData {
       "    \"country\": \"DE\"\n" +
       "  },\n" +
       "  \"itemShippingAddresses\": []\n" +
-      "}\n");
-    return cartJson.mapTo(Cart.class);
+      "}\n";
   }
 
   public static Buffer getRandomPriceLines(String amount){

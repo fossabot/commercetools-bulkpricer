@@ -12,12 +12,8 @@ public class CtpExtensionUpdateRequestedResponse {
     return actions;
   }
 
-  public boolean appendUpdateAction(UpdateAction<Cart> action){
-    if (actions.size() == 50){
-      return false;
-    }
+  public void appendUpdateAction(UpdateAction<Cart> action){
     actions.add(action);
-    return true;
   }
 
 }

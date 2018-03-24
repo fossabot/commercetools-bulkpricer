@@ -69,6 +69,7 @@ public class BulkPricer extends AbstractVerticle {
     // 200 or 201 for successful responses, 400 for validation failures
     try {
       JsonObject bodyJson = routingContext.getBody().toJsonObject();
+      logger.info(bodyJson.toString());
       CtpExtensionRequestBody extensionRequest = bodyJson.mapTo(CtpExtensionRequestBody.class);
       Cart cart = extensionRequest.getResource().getObj();
 
