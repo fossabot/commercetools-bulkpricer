@@ -18,14 +18,10 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.javamoney.moneta.Money;
 
 import javax.money.MonetaryAmount;
-import java.util.HashMap;
-import java.util.Map;
 
 public class BulkPricer extends AbstractVerticle {
 
   private final Logger logger = LoggerFactory.getLogger(BulkPricer.class);
-
-  private Map<String, JsonObject> products = new HashMap<>();
 
   @Override
   public void start() {
