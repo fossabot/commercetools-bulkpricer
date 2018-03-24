@@ -1,5 +1,6 @@
 package com.commercetools.bulkpricer;
 
+import com.commercetools.bulkpricer.helpers.MemoryUsage;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
@@ -60,7 +61,10 @@ public class BulkPriceLoader extends AbstractVerticle {
         .put("message", "accepted import job"), msgOptions);
       LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
       try {
-        sharedPrices.put(groupKey, new ShareablePriceList(readRemotePrices(fileURI,currency), currency));
+        long memoryBefore = MemoryUsage.getUsedMb();
+        sharedPrices.put(groupKey, readRemotePrices(fileURI,currency));
+        logger.info("loaded price list for group " + groupKey + " , used memory difference: " + (MemoryUsage.getUsedMb() - memoryBefore));
+        logger.info(MemoryUsage.memoryReport());
       } catch (IOException e) {
         vertx.eventBus().send("bulkpricer.loadresults", new JsonObject().put("status", 500)
           .put("message", "IO error loading remote price list")
@@ -75,17 +79,21 @@ public class BulkPriceLoader extends AbstractVerticle {
     }
   }
 
-  public IntIntHashMap readRemotePrices(String fileURI, CurrencyUnit currency) throws IOException, ParseException{
+  public ShareablePriceList readRemotePrices(String fileURI, CurrencyUnit currency) throws IOException, ParseException{
     IntIntHashMap prices = new IntIntHashMap();
-
     InputStream remoteStream = new URL(fileURI).openConnection().getInputStream();
     BufferedReader reader = new BufferedReader(new InputStreamReader(remoteStream));
     Stream<String> lines = reader.lines();
-    // using the iterable to pass the exception up
+    Integer duplicateSkuCount = 0;
     for(String line : (Iterable<String>)lines::iterator){
-      prices.putPair(parseLine(line, currency));
+      IntIntPair pair = parseLine(line, currency);
+      if(prices.containsKey(pair.getOne())){
+        duplicateSkuCount++;
+      }else{
+        prices.putPair(pair);
+      }
     }
-    return prices;
+    return new ShareablePriceList(prices, currency, duplicateSkuCount);
   }
 
   public IntIntPair parseLine(String line, CurrencyUnit currency) throws ParseException{

@@ -7,7 +7,6 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
-import org.eclipse.collections.impl.map.mutable.primitive.IntIntHashMap;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.junit.After;
 import org.junit.Before;
@@ -74,9 +73,9 @@ public class BulkPricerTest {
   @Test
   public void testRemotePriceFileLoader(TestContext tc) throws IOException, ParseException {
     BulkPriceLoader bpl = new BulkPriceLoader();
-    // vertx.deployVerticle(new PriceFileServerTestVerticle());
-    IntIntHashMap randomPrices = bpl.readRemotePrices("http://localhost:8081/random-prices/1000", Monetary.getCurrency("EUR"));
-    tc.assertEquals(1000, randomPrices.size());
+    // IntIntHashMap randomPrices = bpl.readRemotePrices("http://localhost:8081/random-prices/1000", Monetary.getCurrency("EUR"));
+    ShareablePriceList randomPrices = bpl.readRemotePrices("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv", Monetary.getCurrency("EUR"));
+    tc.assertEquals(999744, randomPrices.getPrices().size());
+    tc.assertEquals((999999 - 999744), randomPrices.getDuplicateSkuCount());
   }
-
 }

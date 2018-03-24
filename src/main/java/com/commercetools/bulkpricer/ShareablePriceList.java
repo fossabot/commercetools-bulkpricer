@@ -15,11 +15,13 @@ public class ShareablePriceList implements Shareable {
   private ImmutableIntIntMap prices;
   private Date createdAt;
   private CurrencyUnit currency;
+  private Integer duplicateSkuCount;
 
-  public ShareablePriceList(MutableIntIntMap load, CurrencyUnit c) {
-    prices = load.toImmutable();
+  public ShareablePriceList(MutableIntIntMap prices, CurrencyUnit currency, Integer duplicateSkuCount) {
+    this.prices = prices.toImmutable();
     createdAt = new Date();
-    currency = c;
+    this.currency = currency;
+    this.duplicateSkuCount = duplicateSkuCount;
   }
 
   public ImmutableIntIntMap getPrices() {
@@ -33,6 +35,8 @@ public class ShareablePriceList implements Shareable {
   public CurrencyUnit getCurrency() {
     return currency;
   }
+
+  public Integer getDuplicateSkuCount() { return duplicateSkuCount; }
 
   public static String getDateAsUtcIso8601(Date date){
     TimeZone tz = TimeZone.getTimeZone("UTC");
