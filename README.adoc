@@ -10,7 +10,7 @@ See BulkPricer.java for the HTTP API paths (To be documented here or in an OpenA
 The API extension serves cart creations and updates and overrides the cart price with an external price if it finds one for the given customer group or customer ID in its cache.
 It does not complain if it does not find a more specific price, assuming the base price can be offered in any case.
 
-It is based on the vert.x Gradle Starter (forgot to purge the git history, still there). Originally a learning project.
+It is based on the vert.x Gradle Starter and the ver.x Web REST example (forgot to purge the git history, still there). Originally a learning project.
 
 == Prerequisites
 
