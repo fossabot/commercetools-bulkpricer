@@ -1,4 +1,4 @@
-package com.commercetools.bulkpricer;
+package com.commercetools.bulkpricer.apimodel;
 
 import org.javamoney.moneta.internal.DefaultRoundingProvider;
 import javax.money.CurrencyUnit;
@@ -11,7 +11,7 @@ import java.util.Objects;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-final class MoneyRepresentation {
+public final class MoneyRepresentation {
   private final Integer centAmount;
   private final String currencyCode;
 

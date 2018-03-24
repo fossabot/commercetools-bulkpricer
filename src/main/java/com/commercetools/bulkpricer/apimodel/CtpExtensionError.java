@@ -1,4 +1,4 @@
-package com.commercetools.bulkpricer.com.commercetools.bulkpricer.apiModel;
+package com.commercetools.bulkpricer.apimodel;
 
 import io.sphere.sdk.models.LocalizedString;
 import io.sphere.sdk.models.errors.SphereError;

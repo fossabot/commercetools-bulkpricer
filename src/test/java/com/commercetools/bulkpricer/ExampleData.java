@@ -1,6 +1,6 @@
 package com.commercetools.bulkpricer;
 
-import com.commercetools.bulkpricer.com.commercetools.bulkpricer.apiModel.CtpExtensionRequestBody;
+import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.models.Reference;
 import io.vertx.core.buffer.Buffer;

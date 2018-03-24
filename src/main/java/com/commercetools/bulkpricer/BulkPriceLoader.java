@@ -1,5 +1,6 @@
 package com.commercetools.bulkpricer;
 
+import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
 import com.commercetools.bulkpricer.helpers.MemoryUsage;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.DeliveryOptions;

@@ -1,7 +1,7 @@
 package com.commercetools.bulkpricer;
 
-import com.commercetools.bulkpricer.com.commercetools.bulkpricer.apiModel.CtpExtensionRequestBody;
-import com.commercetools.bulkpricer.com.commercetools.bulkpricer.apiModel.CtpExtensionUpdateRequestedResponse;
+import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
+import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
