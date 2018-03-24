@@ -56,24 +56,26 @@ public class BulkPricerTest {
 
   @Test
   public void testLineParser(TestContext tc) throws ParseException {
+    BulkPriceLoader bpl = new BulkPriceLoader();
     tc.assertEquals(
       PrimitiveTuples.pair(123456, 9998)
-      , BulkPriceLoader.parseLine("123456,99.98", Monetary.getCurrency("EUR"))
+      , bpl.parseLine("123456,99.98", Monetary.getCurrency("EUR"))
     );
     tc.assertEquals(
       PrimitiveTuples.pair(123456, 9998)
-      , BulkPriceLoader.parseLine("123456,99.980", Monetary.getCurrency("EUR"))
+      , bpl.parseLine("123456,99.980", Monetary.getCurrency("EUR"))
     );
     tc.assertEquals(
       PrimitiveTuples.pair(123456, 9998)
-      , BulkPriceLoader.parseLine("123456,99.983", Monetary.getCurrency("EUR"))
+      , bpl.parseLine("123456,99.983", Monetary.getCurrency("EUR"))
     );
   }
 
   @Test
   public void testRemotePriceFileLoader(TestContext tc) throws IOException, ParseException {
-    vertx.deployVerticle(new PriceFileServerTestVerticle());
-    IntIntHashMap randomPrices = BulkPriceLoader.readRemotePrices("http://localhost:8081/random-prices/1000", Monetary.getCurrency("EUR"));
+    BulkPriceLoader bpl = new BulkPriceLoader();
+    // vertx.deployVerticle(new PriceFileServerTestVerticle());
+    IntIntHashMap randomPrices = bpl.readRemotePrices("http://localhost:8081/random-prices/1000", Monetary.getCurrency("EUR"));
     tc.assertEquals(1000, randomPrices.size());
   }
 

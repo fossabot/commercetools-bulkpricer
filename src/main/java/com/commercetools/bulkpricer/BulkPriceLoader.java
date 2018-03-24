@@ -75,7 +75,7 @@ public class BulkPriceLoader extends AbstractVerticle {
     }
   }
 
-  public static IntIntHashMap readRemotePrices(String fileURI, CurrencyUnit currency) throws IOException, ParseException{
+  public IntIntHashMap readRemotePrices(String fileURI, CurrencyUnit currency) throws IOException, ParseException{
     IntIntHashMap prices = new IntIntHashMap();
 
     InputStream remoteStream = new URL(fileURI).openConnection().getInputStream();
@@ -88,7 +88,7 @@ public class BulkPriceLoader extends AbstractVerticle {
     return prices;
   }
 
-  public static IntIntPair parseLine(String line, CurrencyUnit currency) throws ParseException{
+  public IntIntPair parseLine(String line, CurrencyUnit currency) throws ParseException{
     int separatorPosition = line.indexOf(",");
     String keyStr = line.substring(0,separatorPosition);
     String valStr = line.substring(separatorPosition + 1, line.length());

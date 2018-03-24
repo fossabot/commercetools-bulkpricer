@@ -16,7 +16,9 @@ public class MainVerticle extends AbstractVerticle {
   public void start(){
 
     final List<AbstractVerticle> verticles = Arrays.asList(
-      new BulkPriceLoader(), new BulkPricer());
+      new BulkPriceLoader(),
+      new BulkPricer(),
+      new PriceFileServerTestVerticle());
 
     verticles.forEach(verticle -> vertx.deployVerticle(verticle, deployResponse -> {
       if (deployResponse.failed()) {
