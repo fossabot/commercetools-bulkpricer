@@ -1,8 +1,8 @@
 package com.commercetools.bulkpricer;
 
 import io.vertx.core.shareddata.Shareable;
-import org.eclipse.collections.api.map.primitive.ImmutableIntIntMap;
-import org.eclipse.collections.api.map.primitive.MutableIntIntMap;
+import org.eclipse.collections.api.map.primitive.ImmutableObjectIntMap;
+import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 
 import javax.money.CurrencyUnit;
 import java.text.DateFormat;
@@ -12,19 +12,19 @@ import java.util.TimeZone;
 
 public class ShareablePriceList implements Shareable {
 
-  private ImmutableIntIntMap prices;
+  private ImmutableObjectIntMap<String> prices;
   private Date createdAt;
   private CurrencyUnit currency;
   private Integer duplicateSkuCount;
 
-  public ShareablePriceList(MutableIntIntMap prices, CurrencyUnit currency, Integer duplicateSkuCount) {
+  public ShareablePriceList(MutableObjectIntMap<String> prices, CurrencyUnit currency, Integer duplicateSkuCount) {
     this.prices = prices.toImmutable();
     createdAt = new Date();
     this.currency = currency;
     this.duplicateSkuCount = duplicateSkuCount;
   }
 
-  public ImmutableIntIntMap getPrices() {
+  public ImmutableObjectIntMap<String> getPrices() {
     return prices;
   }
 

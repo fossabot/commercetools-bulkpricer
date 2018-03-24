@@ -10,8 +10,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.shareddata.LocalMap;
-import org.eclipse.collections.api.tuple.primitive.IntIntPair;
-import org.eclipse.collections.impl.map.mutable.primitive.IntIntHashMap;
+import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
+import org.eclipse.collections.api.tuple.primitive.ObjectIntPair;
+import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.javamoney.moneta.FastMoney;
 
@@ -26,6 +27,7 @@ import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
+import java.util.WeakHashMap;
 import java.util.stream.Stream;
 
 public class BulkPriceLoader extends AbstractVerticle {
@@ -33,6 +35,13 @@ public class BulkPriceLoader extends AbstractVerticle {
   private final Logger logger = LoggerFactory.getLogger(BulkPricer.class);
 
   private MessageConsumer<String> loadRequestsConsumer;
+
+  // contains sku strings mapped to themselves. used for string deduplication
+  // motivation: goal of this service is to hold large numbers of price lists for the same sku.
+  // the maps holding the prices as integers keep references to the sku Strings.
+  // relying on G1 string deduplication works "only if"
+  // TODO: measure actual impact
+  private WeakHashMap<String, String> skuStringStore = new WeakHashMap<>();
 
   @Override
   public void start() {
@@ -81,13 +90,13 @@ public class BulkPriceLoader extends AbstractVerticle {
   }
 
   public ShareablePriceList readRemotePrices(String fileURI, CurrencyUnit currency) throws IOException, ParseException{
-    IntIntHashMap prices = new IntIntHashMap();
+    MutableObjectIntMap<String> prices = new ObjectIntHashMap<>();
     InputStream remoteStream = new URL(fileURI).openConnection().getInputStream();
     BufferedReader reader = new BufferedReader(new InputStreamReader(remoteStream));
     Stream<String> lines = reader.lines();
     Integer duplicateSkuCount = 0;
     for(String line : (Iterable<String>)lines::iterator){
-      IntIntPair pair = parseLine(line, currency);
+      ObjectIntPair<String> pair = parseLine(line, currency);
       if(prices.containsKey(pair.getOne())){
         duplicateSkuCount++;
       }else{
@@ -97,15 +106,25 @@ public class BulkPriceLoader extends AbstractVerticle {
     return new ShareablePriceList(prices, currency, duplicateSkuCount);
   }
 
-  public IntIntPair parseLine(String line, CurrencyUnit currency) throws ParseException{
+  public ObjectIntPair<String> parseLine(String line, CurrencyUnit currency) throws ParseException{
     int separatorPosition = line.indexOf(",");
-    String keyStr = line.substring(0,separatorPosition);
+    String sku = cheapSku(line.substring(0,separatorPosition));
     String valStr = line.substring(separatorPosition + 1, line.length());
 
-    int sku = NumberFormat.getIntegerInstance().parse(keyStr).intValue();
     MonetaryAmount price = FastMoney.of(NumberFormat.getNumberInstance(Locale.US).parse(valStr), currency);
     int centAmount = new MoneyRepresentation(price).getCentAmount();
     return PrimitiveTuples.pair(sku, centAmount);
   }
+
+  private String cheapSku(String sku){
+    if(skuStringStore.containsKey(sku)){
+      return skuStringStore.get(sku);
+    }else{
+      skuStringStore.put(sku,sku);
+      return sku;
+    }
+  }
+
+
 }
 

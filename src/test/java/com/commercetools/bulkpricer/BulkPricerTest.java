@@ -57,15 +57,15 @@ public class BulkPricerTest {
   public void testLineParser(TestContext tc) throws ParseException {
     BulkPriceLoader bpl = new BulkPriceLoader();
     tc.assertEquals(
-      PrimitiveTuples.pair(123456, 9998)
+      PrimitiveTuples.pair("123456", 9998)
       , bpl.parseLine("123456,99.98", Monetary.getCurrency("EUR"))
     );
     tc.assertEquals(
-      PrimitiveTuples.pair(123456, 9998)
+      PrimitiveTuples.pair("123456", 9998)
       , bpl.parseLine("123456,99.980", Monetary.getCurrency("EUR"))
     );
     tc.assertEquals(
-      PrimitiveTuples.pair(123456, 9998)
+      PrimitiveTuples.pair("123456", 9998)
       , bpl.parseLine("123456,99.983", Monetary.getCurrency("EUR"))
     );
   }

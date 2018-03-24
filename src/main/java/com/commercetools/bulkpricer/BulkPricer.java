@@ -5,6 +5,7 @@ import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
+import io.sphere.sdk.products.Price;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -17,8 +18,6 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.javamoney.moneta.Money;
 
 import javax.money.MonetaryAmount;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,17 +33,36 @@ public class BulkPricer extends AbstractVerticle {
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
 
+    router.get("/prices/:groupKey/:sku")
+      .produces("application/json")
+      .handler(this::handleGetPrice);
+
+    router.put("/prices/:groupKey/:sku")
+      .consumes("application/json")
+      .handler(this::handlePutPrice);
+
     router.post("/prices/for-cart/extend-with-external-prices")
       .consumes("application/json")
       .produces("application/json")
       .handler(this::handleExtendCartWithExternalPrices);
 
-    router.post("/prices/imports/:groupId")
+    router.post("/prices/import-from-url")
       .consumes("application/json")
       .produces("application/json")
       .handler(this::handleImportJobSubmission);
 
     vertx.createHttpServer().requestHandler(router::accept).listen(8080);
+  }
+
+  private void handleGetPrice(RoutingContext routingContext) {
+    MonetaryAmount amount = lookUpPrice(routingContext.pathParam("groupKey"), routingContext.pathParam("sku"));
+    routingContext.response()
+      .setStatusCode(200)
+      .end(JsonObject.mapFrom(Price.of(amount)).toBuffer());
+  }
+
+  private void handlePutPrice(RoutingContext routingContext) {
+
   }
 
   private void handleExtendCartWithExternalPrices(RoutingContext routingContext) {
@@ -64,23 +82,18 @@ public class BulkPricer extends AbstractVerticle {
         String sku = lineItem.getVariant().getSku();
         String groupKey = cart.getCustomerGroup().getId();
         String customerId = cart.getCustomerId();
-        try {
-          int skuInt = NumberFormat.getIntegerInstance().parse(sku).intValue();
-          if (groupKey != null) {
-            MonetaryAmount groupPrice = lookUpPrice(groupKey, skuInt);
-            if (groupPrice != null) {
-              extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem, groupPrice));
-            }
+        if (groupKey != null) {
+          MonetaryAmount groupPrice = lookUpPrice(groupKey, sku);
+          if (groupPrice != null) {
+            extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem, groupPrice));
           }
-          if (customerId != null) {
-            MonetaryAmount customerPrice = lookUpPrice(customerId, skuInt);
+        }
+        if (customerId != null) {
+          MonetaryAmount customerPrice = lookUpPrice(customerId, sku);
             if (customerPrice != null) {
               extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem, customerPrice));
             }
           }
-        } catch (ParseException e) {
-          routingContext.response().setStatusCode(400).setStatusMessage("External Pricing is only supported for numeric integer SKUs with this service");
-        }
 
         routingContext.response()
           .setStatusCode(200)
@@ -93,7 +106,7 @@ public class BulkPricer extends AbstractVerticle {
 
   }
 
-  private MonetaryAmount lookUpPrice(String groupKey, int sku) {
+  private MonetaryAmount lookUpPrice(String groupKey, String sku) {
     LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
     if (sharedPrices == null) {
       return null;
