@@ -21,3 +21,4 @@ gradle-app.setting
 # ignore intelliJ metadata
 .idea
 commercetools-bulkpricer.iml
+out
