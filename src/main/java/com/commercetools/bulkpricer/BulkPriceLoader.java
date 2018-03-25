@@ -27,6 +27,7 @@ import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.stream.Stream;
 
@@ -58,6 +59,7 @@ public class BulkPriceLoader extends AbstractVerticle {
     // TODO parse into PriceLoadRequest object
     JsonObject params = new JsonObject(message.body());
     String correlationId = message.headers().get("X-Correlation-ID");
+    if(correlationId == null) correlationId = "bulkpricer-" + UUID.randomUUID().toString();
     DeliveryOptions msgOptions = new DeliveryOptions().addHeader("X-Correlation-ID", correlationId);
 
     String groupKey = params.getString("groupKey");
