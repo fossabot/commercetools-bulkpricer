@@ -79,7 +79,7 @@ public class BulkPricerTest {
   public void testRemotePriceFileLoader(TestContext tc) throws IOException, ParseException {
     BulkPriceLoader bpl = new BulkPriceLoader();
     // IntIntHashMap randomPrices = bpl.readRemotePrices("http://localhost:8081/random-prices/1000", Monetary.getCurrency("EUR"));
-    ShareablePriceList randomPrices = bpl.readRemotePrices("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv", Monetary.getCurrency("EUR"));
+    ShareablePriceList randomPrices = bpl.readRemotePrices("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv", Monetary.getCurrency("EUR"), "test-group");
     tc.assertEquals(999744, randomPrices.getPrices().size());
     tc.assertEquals((999999 - 999744), randomPrices.getDuplicateSkuCount());
   }
@@ -92,9 +92,14 @@ public class BulkPricerTest {
       response -> {
         tc.assertTrue(response.succeeded());
         JsonObject respBody = new JsonObject(response.result().body().toString());
-        tc.assertEquals(202, respBody.getInteger("status"));
+        tc.assertEquals(202, respBody.getInteger("statusCode"));
       });
-      // TODO now wait for "it" to happen and check
+    Async tcAsync = tc.async();
+    vertx.eventBus().consumer("bulkpricer.loadresults", message -> {
+      JsonObject params = new JsonObject(message.body().toString());
+      tc.assertEquals(201, params.getInteger("statusCode"));
+      tcAsync.complete();
+    });
   }
 
   @Test

@@ -1,3 +1,14 @@
+// koloboke buildtime stuff:
+//buildscript {
+//  repositories {
+//    maven { url 'http://repo.spring.io/plugins-release' }
+//  }
+//  dependencies {
+//    classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
+//  }
+//}
+// end koloboke buildtime
+
 plugins {
   id 'application'
   id 'com.github.johnrengelman.shadow' version '2.0.2'
@@ -6,6 +17,11 @@ plugins {
 repositories {
   jcenter()
 }
+
+//configure(allprojects) {
+//  apply plugin: 'propdeps'
+//  apply plugin: 'propdeps-idea'
+//}
 
 version = '1.0-SNAPSHOT'
 sourceCompatibility = '1.8'
@@ -19,13 +35,20 @@ def watchForChange = 'src/**/*'
 def doOnChange = './gradlew classes'
 
 dependencies {
+
   compile "io.vertx:vertx-core:$vertxVersion"
   compile "io.vertx:vertx-web:$vertxVersion"
   compile "org.slf4j:slf4j-jdk14:1.7.25"
+
   compile "org.eclipse.collections:eclipse-collections-api:$eclipseCollectionsVersion"
   compile "org.eclipse.collections:eclipse-collections:$eclipseCollectionsVersion"
+
+//  provided 'com.koloboke:koloboke-compile:0.5.1'
+//  compile 'com.koloboke:koloboke-impl-common-jdk8:1.0.0'
+
   compile "com.commercetools.sdk.jvm.core:commercetools-models:$commercetoolsJvmSdkVersion"
   compile "com.commercetools.sdk.jvm.core:commercetools-sdk-base:$commercetoolsJvmSdkVersion"
+
   testCompile "junit:junit:4.12"
   testCompile "io.vertx:vertx-unit:$vertxVersion"
   testCompile "io.vertx:vertx-web-client:$vertxVersion"
@@ -48,3 +71,5 @@ run {
 task wrapper(type: Wrapper) {
   gradleVersion = '4.5.1'
 }
+
+

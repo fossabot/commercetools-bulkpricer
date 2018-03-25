@@ -12,6 +12,12 @@ It does not complain if it does not find a more specific price, assuming the bas
 
 It is based on the vert.x Gradle Starter and the ver.x Web REST example (forgot to purge the git history, still there). Originally a learning project.
 
+resources:
+ * http://java-performance.info/hashmap-overview-jdk-fastutil-goldman-sachs-hppc-koloboke-trove-january-2015/
+
+
+
+
 == Prerequisites
 
 * JDK 8+

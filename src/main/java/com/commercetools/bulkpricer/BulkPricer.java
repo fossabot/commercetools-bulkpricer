@@ -2,10 +2,10 @@ package com.commercetools.bulkpricer;
 
 import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
+import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
-import io.sphere.sdk.products.Price;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -18,6 +18,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.javamoney.moneta.Money;
 
 import javax.money.MonetaryAmount;
+import java.util.HashMap;
 
 public class BulkPricer extends AbstractVerticle {
 
@@ -29,7 +30,11 @@ public class BulkPricer extends AbstractVerticle {
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
 
-    router.get("/prices/:groupKey/:sku")
+    router.get("/prices/groups")
+      .produces("application/json")
+      .handler(this::handleGetGroups);
+
+    router.get("/prices/groups/:groupKey/:sku")
       .produces("application/json")
       .handler(this::handleGetPrice);
 
@@ -46,19 +51,30 @@ public class BulkPricer extends AbstractVerticle {
     vertx.createHttpServer().requestHandler(router::accept).listen(8080);
   }
 
+  private void handleGetGroups(RoutingContext routingContext){
+    LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
+    HashMap<String, Object> response = new HashMap<>();
+    if (sharedPrices != null) {
+      sharedPrices.forEach(response::put);
+    }
+    routingContext.response()
+      .setStatusCode(200)
+      .end(JsonObject.mapFrom(response).encodePrettily());
+  }
+
   private void handleGetPrice(RoutingContext routingContext) {
     MonetaryAmount amount = lookUpPrice(routingContext.pathParam("groupKey"), routingContext.pathParam("sku"));
     if(amount != null){
+      MoneyRepresentation money = new MoneyRepresentation(amount);
       routingContext.response()
-        .setStatusCode(200)
-        .end(JsonObject.mapFrom(Price.of(amount)).toBuffer());
+        .setStatusCode(200).end(JsonObject.mapFrom(money).encodePrettily());
     }else{
       routingContext.response()
         .setStatusCode(404)
         .setStatusMessage("Could not find a price for given groupKey and SKU").end();
     }
   }
-  
+
   private void handleExtendCartWithExternalPrices(RoutingContext routingContext) {
     try {
       JsonObject bodyJson = routingContext.getBody().toJsonObject();
@@ -66,14 +82,13 @@ public class BulkPricer extends AbstractVerticle {
       CtpExtensionRequestBody extensionRequest = bodyJson.mapTo(CtpExtensionRequestBody.class);
       Cart cart = extensionRequest.getResource().getObj();
 
-      // TODO damn the customer Group is just a reference. -> this will never match without fetching it separately and caching it
-      // String groupKey = cart.getCustomerGroup().getObj().getKey();
-      // interim approach to test:
-
       CtpExtensionUpdateRequestedResponse extensionResponse = new CtpExtensionUpdateRequestedResponse();
 
       cart.getLineItems().forEach((LineItem lineItem) -> {
         String sku = lineItem.getVariant().getSku();
+        // TODO damn the customer Group is just a reference. -> this will never match without fetching it separately and caching it
+        // String groupKey = cart.getCustomerGroup().getObj().getKey();
+        // interim approach to test: use the raw ID
         String groupKey = cart.getCustomerGroup().getId();
         String customerId = cart.getCustomerId();
         if (groupKey != null) {
@@ -99,7 +114,6 @@ public class BulkPricer extends AbstractVerticle {
         .setStatusCode(400)
         .setStatusMessage("HTTP body must be valid JSON - " + e.getMessage()).end();
     }
-
   }
 
   private MonetaryAmount lookUpPrice(String groupKey, String sku) {
@@ -118,17 +132,18 @@ public class BulkPricer extends AbstractVerticle {
   private void handleLoadJobSubmission(RoutingContext routingContext) {
     vertx.eventBus().send("bulkpricer.loadrequests", routingContext.getBodyAsString(), response -> {
       if (response.succeeded()) {
-        routingContext.response().setStatusCode(202).end(
-          response.result().body().toString()
-        );
+        JsonObject responseMessage = new JsonObject((response.result().body().toString()));
+        routingContext.response()
+          .setStatusCode(responseMessage.getInteger("statusCode"))
+          .putHeader("X-Correlation-ID", response.result().headers().get("X-Correlation-ID"))
+          .setStatusMessage(responseMessage.getString("statusMessage")).end();
       } else {
-        logger.error("Can't send message to hello service", response.cause());
-        routingContext.response().setStatusCode(500).end(
-          response.cause().getMessage()
-        );
+        logger.error("couldn't submit load job to loader via event bus", response.cause());
+        routingContext.response().setStatusCode(500)
+          .putHeader("X-Correlation-ID", response.result().headers().get("X-Correlation-ID"))
+          .end(response.cause().getMessage());
       }
     });
-
   }
 
 }

@@ -52,65 +52,79 @@ public class BulkPriceLoader extends AbstractVerticle {
   @Override
   public void stop() {
     loadRequestsConsumer.unregister();
-    // TODO free memory of price lists?
+    this.skuStringStore.clear();
   }
 
   private void handleLoadRequest(Message<String> message) {
     // TODO parse into PriceLoadRequest object
     JsonObject params = new JsonObject(message.body());
     String correlationId = message.headers().get("X-Correlation-ID");
-    if(correlationId == null) correlationId = "bulkpricer-" + UUID.randomUUID().toString();
+    if (correlationId == null) correlationId = "bulkpricer-" + UUID.randomUUID().toString();
     DeliveryOptions msgOptions = new DeliveryOptions().addHeader("X-Correlation-ID", correlationId);
 
     String groupKey = params.getString("groupKey");
     CurrencyUnit currency = Monetary.getCurrency(params.getString("currencyCode", "EUR"));
-    String fileURI = params.getString("fileURL");
-    if (fileURI == null || groupKey == null) {
-      message.reply(new JsonObject().put("status", 400)
-        .put("message", "inssufficient parameters - groupkey and fileURI are mandatory"), msgOptions);
+    String fileURL = params.getString("fileURL");
+    if (fileURL == null || groupKey == null) {
+      message.reply(new JsonObject()
+        .put("statusCode", 400)
+        .put("statusMessage", "inssufficient parameters - groupkey and fileURL are mandatory"), msgOptions);
     } else {
-      message.reply(new JsonObject().put("status", 202)
-        .put("message", "accepted import job"), msgOptions);
-      LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
-      try {
-        long memoryBefore = MemoryUsage.getUsedMb();
-        sharedPrices.put(groupKey, readRemotePrices(fileURI,currency));
-        logger.info("loaded price list for group " + groupKey + " , used memory difference: " + (MemoryUsage.getUsedMb() - memoryBefore));
-        logger.info(MemoryUsage.memoryReport());
-      } catch (IOException e) {
-        vertx.eventBus().send("bulkpricer.loadresults", new JsonObject().put("status", 500)
-          .put("message", "IO error loading remote price list")
-          .put("messageDetails", e.getMessage()), msgOptions);
-      } catch (ParseException e) {
-        vertx.eventBus().send("bulkpricer.loadresults", new JsonObject().put("status", 500)
-          .put("message", "could not parse remote price list")
-          .put("messageDetails", e.getMessage()), msgOptions);
-      }
-      vertx.eventBus().send("bulkpricer.loadresults", new JsonObject().put("status", 200)
-        .put("message", "successfully loaded price list"), msgOptions);
+      message.reply(new JsonObject()
+        .put("statusCode", 202)
+        .put("statusMessage", "accepted import job"), msgOptions);
+
+      // executeBlocking without further parameters implies serial execution in a worker thread.
+      // this is the desired behavior to prevent a) event loop blocking b) multiple temporary price lists hogging memory.
+      vertx.<ShareablePriceList>executeBlocking(ebFuture -> {
+        ShareablePriceList newPriceList = readRemotePrices(fileURL, currency, groupKey);
+        if (newPriceList.getLoadStatus() == 201) {
+          LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
+          sharedPrices.put(groupKey, newPriceList);
+        }
+        ebFuture.complete(newPriceList);
+      }, res -> {
+        if(res.succeeded()){
+          vertx.eventBus().send("bulkpricer.loadresults", new JsonObject()
+              .put("statusCode", res.result().getLoadStatus())
+              .put("statusMessage", res.result().getLoadStatusMessage())
+            , msgOptions);
+        }
+      });
+
     }
   }
 
-  public ShareablePriceList readRemotePrices(String fileURI, CurrencyUnit currency) throws IOException, ParseException{
-    MutableObjectIntMap<String> prices = new ObjectIntHashMap<>();
-    InputStream remoteStream = new URL(fileURI).openConnection().getInputStream();
-    BufferedReader reader = new BufferedReader(new InputStreamReader(remoteStream));
-    Stream<String> lines = reader.lines();
-    Integer duplicateSkuCount = 0;
-    for(String line : (Iterable<String>)lines::iterator){
-      ObjectIntPair<String> pair = parseLine(line, currency);
-      if(prices.containsKey(pair.getOne())){
-        duplicateSkuCount++;
-      }else{
-        prices.putPair(pair);
+  public ShareablePriceList readRemotePrices(String fileURL, CurrencyUnit currency, String groupKey) {
+    try {
+      long memoryBefore = MemoryUsage.getUsedMb();
+      MutableObjectIntMap<String> prices = new ObjectIntHashMap<>();
+      InputStream remoteStream = null;
+      remoteStream = new URL(fileURL).openConnection().getInputStream();
+      BufferedReader reader = new BufferedReader(new InputStreamReader(remoteStream));
+      Stream<String> lines = reader.lines();
+      Integer duplicateSkuCount = 0;
+      for (String line : (Iterable<String>) lines::iterator) {
+        ObjectIntPair<String> pair = parseLine(line, currency);
+        if (prices.containsKey(pair.getOne())) {
+          duplicateSkuCount++;
+        } else {
+          prices.putPair(pair);
+        }
       }
+      logger.info("loaded price list, used memory difference: " + (MemoryUsage.getUsedMb() - memoryBefore));
+      logger.info(MemoryUsage.memoryReport());
+      return new ShareablePriceList(groupKey, prices, currency, duplicateSkuCount, 201, "loaded price list from " + fileURL);
+    } catch (IOException e) {
+      return new ShareablePriceList(groupKey,null, currency, null, 500, "IO error loading remote price list " + e.getMessage());
+    } catch (ParseException e) {
+      return new ShareablePriceList(groupKey,null, currency, null, 500, "could not parse remote price list " + e.getMessage());
     }
-    return new ShareablePriceList(prices, currency, duplicateSkuCount);
   }
 
-  public ObjectIntPair<String> parseLine(String line, CurrencyUnit currency) throws ParseException{
+  public ObjectIntPair<String> parseLine(String line, CurrencyUnit currency) throws ParseException {
     int separatorPosition = line.indexOf(",");
-    String sku = cheapSku(line.substring(0,separatorPosition));
+    String sku = cheapSku(line.substring(0, separatorPosition));
     String valStr = line.substring(separatorPosition + 1, line.length());
 
     MonetaryAmount price = FastMoney.of(NumberFormat.getNumberInstance(Locale.US).parse(valStr), currency);
@@ -118,11 +132,11 @@ public class BulkPriceLoader extends AbstractVerticle {
     return PrimitiveTuples.pair(sku, centAmount);
   }
 
-  private String cheapSku(String sku){
-    if(skuStringStore.containsKey(sku)){
+  private String cheapSku(String sku) {
+    if (skuStringStore.containsKey(sku)) {
       return skuStringStore.get(sku);
-    }else{
-      skuStringStore.put(sku,sku);
+    } else {
+      skuStringStore.put(sku, sku);
       return sku;
     }
   }
