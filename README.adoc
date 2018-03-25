@@ -3,19 +3,21 @@
 This is a vert.x based HTTP service providing an commercetools API extension.
 
 It is intended to keep large amounts of customer group (price list) and customer specific SKU prices in memory very efficiently.
-I.e. it's designed for cases where commercetools is not the system of record for customer specific prices and the number of prices per SKU is high.
+I.e. it's designed for cases where commercetools is not the system of record for customer specific prices and the number of prices per SKU is high and bulk updates are frequent and "dumb" (e.g. not differential, not a stream of actual changes).
 
 See BulkPricer.java for the HTTP API paths (To be documented here or in an OpenAPI spec)
 
 The API extension serves cart creations and updates and overrides the cart price with an external price if it finds one for the given customer group or customer ID in its cache.
 It does not complain if it does not find a more specific price, assuming the base price can be offered in any case.
 
-It is based on the vert.x Gradle Starter and the ver.x Web REST example (forgot to purge the git history, still there). Originally a learning project.
+Price entries cannot be mutated individually by design - only mutation is a full reload of a given price group (=price list/customer) completely.
+
+It is based on the vert.x Gradle Starter and the ver.x Web REST example.
+
+Originally a learning project.
 
 resources:
  * http://java-performance.info/hashmap-overview-jdk-fastutil-goldman-sachs-hppc-koloboke-trove-january-2015/
-
-
 
 
 == Prerequisites
@@ -40,7 +42,7 @@ The project contains:
 * the Gradle project and its configuration (`build.gradle`)
 * a _main_ verticle file (src/main/java/io/vertx/starter/MainVerticle.java), which starts the other Verticles
 * a BulkPricer Verticle that represents the HTTP API and handles the direct responses
-* a BulkPriceLoader Verticle that receives messages on the vert.x event bus to load a new price file for a specific price group from an external HTTP location in the background.
+* a BulkPriceLoader Verticle that receives messages on the vert.x event bus to load a new price file for a specific price group from an external HTTP location in the background (sequentially for the job submissions).
 
 
 == Building the project
