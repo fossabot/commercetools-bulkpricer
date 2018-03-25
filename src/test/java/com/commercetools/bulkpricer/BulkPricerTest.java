@@ -2,6 +2,9 @@ package com.commercetools.bulkpricer;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -10,6 +13,7 @@ import io.vertx.ext.web.client.WebClient;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -19,6 +23,8 @@ import java.text.ParseException;
 
 @RunWith(VertxUnitRunner.class)
 public class BulkPricerTest {
+
+  private final Logger logger = LoggerFactory.getLogger(BulkPricer.class);
 
   private Vertx vertx;
 
@@ -34,6 +40,7 @@ public class BulkPricerTest {
   }
 
   @Test
+  @Ignore
   public void testCartExtensionRoundtrip(TestContext tc) {
     Async async = tc.async();
     WebClient httpClient = WebClient.create(vertx);
@@ -78,7 +85,21 @@ public class BulkPricerTest {
   }
 
   @Test
-  public void testPriceLoadRequest(TestContext tc){
+  public void testPriceLoadByEvent(TestContext tc){
+    vertx.eventBus().send(
+      "bulkpricer.loadrequests",
+      ExampleData.getPriceLoadRequestAsString("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv"),
+      response -> {
+        tc.assertTrue(response.succeeded());
+        JsonObject respBody = new JsonObject(response.result().body().toString());
+        tc.assertEquals(202, respBody.getInteger("status"));
+      });
+      // TODO now wait for "it" to happen and check
+  }
+
+  @Test
+  @Ignore
+  public void testPriceLoadByApi(TestContext tc){
     Async async = tc.async();
     WebClient httpClient = WebClient.create(vertx);
     httpClient.post(8080, "localhost", "/prices/load-from-url")
@@ -86,7 +107,7 @@ public class BulkPricerTest {
       .sendBuffer(Buffer.buffer(ExampleData.getPriceLoadRequestAsString("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv")), asyncResult -> {
         if (asyncResult.succeeded()) {
           HttpResponse<Buffer> response = asyncResult.result();
-          tc.assertEquals(response.statusCode(), 200);
+          tc.assertEquals(200,response.statusCode());
           // TODO actually assert the response body
         } else {
           tc.fail("calling submit price load api failed totally");
