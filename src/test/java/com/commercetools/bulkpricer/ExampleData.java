@@ -8,6 +8,15 @@ import java.util.Random;
 
 public class ExampleData {
 
+  public static String getPriceLoadRequestAsString(String fileURL){
+    return "{\n" +
+      "  \"groupKey\": \"test-key\",\n" +
+      "  \"currency\": \"EUR\",\n" +
+      "  \"fileURL\": \"" + fileURL + "\"\n" +
+      "  }";
+  }
+
+
   public static String getCtpExtensionRequestBodyAsString(){
     return "{\n" +
       "  \"action\": \"Update\",\n" +
@@ -22,7 +31,7 @@ public class ExampleData {
       "  \"obj\": " + getTestCartAsJsonString() +
       "  }";
   }
-  
+
   public static String getTestCartAsJsonString(){
     return "{\n" +
       "  \"type\": \"Cart\",\n" +

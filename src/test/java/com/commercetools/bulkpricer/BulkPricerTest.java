@@ -76,4 +76,23 @@ public class BulkPricerTest {
     tc.assertEquals(999744, randomPrices.getPrices().size());
     tc.assertEquals((999999 - 999744), randomPrices.getDuplicateSkuCount());
   }
+
+  @Test
+  public void testPriceLoadRequest(TestContext tc){
+    Async async = tc.async();
+    WebClient httpClient = WebClient.create(vertx);
+    httpClient.post(8080, "localhost", "/prices/load-from-url")
+      .putHeader("content-type", "application/json")
+      .sendBuffer(Buffer.buffer(ExampleData.getPriceLoadRequestAsString("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv")), asyncResult -> {
+        if (asyncResult.succeeded()) {
+          HttpResponse<Buffer> response = asyncResult.result();
+          tc.assertEquals(response.statusCode(), 200);
+          // TODO actually assert the response body
+        } else {
+          tc.fail("calling submit price load api failed totally");
+        }
+        async.complete();
+      });
+  }
+
 }

@@ -62,7 +62,7 @@ public class BulkPriceLoader extends AbstractVerticle {
 
     String groupKey = params.getString("groupKey");
     CurrencyUnit currency = Monetary.getCurrency(params.getString("currencyCode", "EUR"));
-    String fileURI = params.getString("fileURI");
+    String fileURI = params.getString("fileURL");
     if (fileURI == null || groupKey == null) {
       message.reply(new JsonObject().put("status", 400)
         .put("message", "inssufficient parameters - groupkey and fileURI are mandatory"), msgOptions);

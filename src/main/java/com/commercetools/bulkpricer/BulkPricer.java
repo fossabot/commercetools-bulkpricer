@@ -33,36 +33,33 @@ public class BulkPricer extends AbstractVerticle {
       .produces("application/json")
       .handler(this::handleGetPrice);
 
-    router.put("/prices/:groupKey/:sku")
-      .consumes("application/json")
-      .handler(this::handlePutPrice);
-
     router.post("/prices/for-cart/extend-with-external-prices")
       .consumes("application/json")
       .produces("application/json")
       .handler(this::handleExtendCartWithExternalPrices);
 
-    router.post("/prices/import-from-url")
+    router.post("/prices/load-from-url")
       .consumes("application/json")
       .produces("application/json")
-      .handler(this::handleImportJobSubmission);
+      .handler(this::handleLoadJobSubmission);
 
     vertx.createHttpServer().requestHandler(router::accept).listen(8080);
   }
 
   private void handleGetPrice(RoutingContext routingContext) {
     MonetaryAmount amount = lookUpPrice(routingContext.pathParam("groupKey"), routingContext.pathParam("sku"));
-    routingContext.response()
-      .setStatusCode(200)
-      .end(JsonObject.mapFrom(Price.of(amount)).toBuffer());
+    if(amount != null){
+      routingContext.response()
+        .setStatusCode(200)
+        .end(JsonObject.mapFrom(Price.of(amount)).toBuffer());
+    }else{
+      routingContext.response()
+        .setStatusCode(404)
+        .setStatusMessage("Could not find a price for given groupKey and SKU").end();
+    }
   }
-
-  private void handlePutPrice(RoutingContext routingContext) {
-
-  }
-
+  
   private void handleExtendCartWithExternalPrices(RoutingContext routingContext) {
-    // 200 or 201 for successful responses, 400 for validation failures
     try {
       JsonObject bodyJson = routingContext.getBody().toJsonObject();
       logger.info(bodyJson.toString());
@@ -98,7 +95,9 @@ public class BulkPricer extends AbstractVerticle {
       });
 
     } catch (DecodeException e) {
-      routingContext.response().setStatusCode(400).setStatusMessage("HTTP body must be valid JSON");
+      routingContext.response()
+        .setStatusCode(400)
+        .setStatusMessage("HTTP body must be valid JSON - " + e.getMessage()).end();
     }
 
   }
@@ -116,7 +115,7 @@ public class BulkPricer extends AbstractVerticle {
     return Money.ofMinor(groupPriceList.getCurrency(), price);
   }
 
-  private void handleImportJobSubmission(RoutingContext routingContext) {
+  private void handleLoadJobSubmission(RoutingContext routingContext) {
     vertx.eventBus().send("bulkpricer.loadrequests", routingContext.getBodyAsString(), response -> {
       if (response.succeeded()) {
         routingContext.response().setStatusCode(202).end(
