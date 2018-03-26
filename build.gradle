@@ -14,6 +14,7 @@ plugins {
 }
 
 apply plugin: 'docker'
+apply plugin: 'java'
 
 group = 'nkuehn'
 version = '1.0-SNAPSHOT'
@@ -67,6 +68,13 @@ dependencies {
   testCompile "junit:junit:4.12"
   testCompile "io.vertx:vertx-unit:$vertxVersion"
   testCompile "io.vertx:vertx-web-client:$vertxVersion"
+}
+
+tasks.withType(JavaCompile) {
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
+  // this subproject requires -parameters option (Jackson deserialization parameters)
+  options.compilerArgs << '-parameters'
 }
 
 shadowJar {

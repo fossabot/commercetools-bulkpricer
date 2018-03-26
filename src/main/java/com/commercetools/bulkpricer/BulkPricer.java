@@ -3,11 +3,13 @@ package com.commercetools.bulkpricer;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
 import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -26,6 +28,9 @@ public class BulkPricer extends AbstractVerticle {
 
   @Override
   public void start() {
+
+    Json.mapper.registerModule(new ParameterNamesModule());
+    Json.prettyMapper.registerModule(new ParameterNamesModule());
 
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
@@ -81,6 +86,7 @@ public class BulkPricer extends AbstractVerticle {
   }
 
   private void handleExtendCartWithExternalPrices(RoutingContext routingContext) {
+
     try {
       JsonObject bodyJson = routingContext.getBody().toJsonObject();
       logger.info(bodyJson.toString());
