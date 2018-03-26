@@ -10,8 +10,8 @@ public class ExampleData {
 
   public static String getPriceLoadRequestAsString(String fileURL){
     return "{\n" +
-      "  \"groupKey\": \"test-key\",\n" +
-      "  \"currency\": \"EUR\",\n" +
+      "  \"groupKey\": \"test-customer-id\",\n" +
+      "  \"currencyCode\": \"EUR\",\n" +
       "  \"fileURL\": \"" + fileURL + "\"\n" +
       "  }";
   }
@@ -58,7 +58,7 @@ public class ExampleData {
       "      },\n" +
       "      \"variant\": {\n" +
       "        \"id\": 1,\n" +
-      "        \"sku\": \"M0E20000000DQTH\",\n" +
+      "        \"sku\": \"1589114121\",\n" +
       "        \"prices\": [\n" +
       "          {\n" +
       "            \"value\": {\n" +
@@ -184,6 +184,11 @@ public class ExampleData {
       "    ]\n" +
       "  },\n" +
       "  \"country\": \"DE\",\n" +
+      "  \"customerId\": \"test-customer-id\",\n" +
+      "  \"customerGroup\": {\n" +
+      "  \"typeId\": \"customer-group\",\n" +
+      "  \"id\": \"test-customer-group\"\n" +
+      "},\n" +
       "  \"customLineItems\": [],\n" +
       "  \"discountCodes\": [],\n" +
       "  \"custom\": {\n" +

@@ -51,6 +51,7 @@ public class BulkPricerTest {
           HttpResponse<Buffer> response = asyncResult.result();
           tc.assertEquals(response.statusCode(), 200);
           // TODO actually assert the response body (need working test data for that)
+          // should:  line item 5dac682a-257a-4ada-8062-cdcd756a294a  should get a price of 2483688.56 (the first in the example data)
         } else {
           tc.fail("calling extension api failed totally");
         }
