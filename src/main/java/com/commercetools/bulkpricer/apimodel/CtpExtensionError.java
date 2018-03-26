@@ -5,7 +5,10 @@ import io.sphere.sdk.models.errors.SphereError;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Locale;
-
+/*
+Implements this model:
+https://docs.commercetools.com/http-api-projects-api-extensions.html#error
+ */
 public class CtpExtensionError {
   public String code;
   public String message;

@@ -40,7 +40,7 @@ public class BulkPricerTest {
   }
 
   @Test
-  @Ignore
+  // @Ignore
   public void testCartExtensionRoundtrip(TestContext tc) {
     Async async = tc.async();
     WebClient httpClient = WebClient.create(vertx);

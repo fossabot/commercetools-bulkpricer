@@ -5,6 +5,10 @@ import io.sphere.sdk.commands.UpdateAction;
 
 import java.util.ArrayList;
 
+/*
+Implements this model:
+https://docs.commercetools.com/http-api-projects-api-extensions.html#updates-requested
+*/
 public class CtpExtensionUpdateRequestedResponse {
   private ArrayList<UpdateAction<Cart>> actions;
 

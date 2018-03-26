@@ -5,6 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.models.Reference;
 
+/*
+Implements this request:
+https://docs.commercetools.com/http-api-projects-api-extensions.html#input
+ */
+
 public class CtpExtensionRequestBody {
   private String action;
   private Reference<Cart> resource;
