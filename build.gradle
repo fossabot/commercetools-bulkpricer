@@ -91,6 +91,9 @@ run {
   args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
 }
 
+// for heroku:
+task stage(dependsOn: ['assembleShadowDist'])
+
 task wrapper(type: Wrapper) {
   gradleVersion = '4.5.1'
 }
