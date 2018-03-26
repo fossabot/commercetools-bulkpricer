@@ -86,28 +86,29 @@ public class BulkPricer extends AbstractVerticle {
       logger.info(bodyJson.toString());
       CtpExtensionRequestBody extensionRequest = bodyJson.mapTo(CtpExtensionRequestBody.class);
       Cart cart = extensionRequest.getResource().getObj();
+      String customerId = cart.getCustomerId();
+      String groupKey = cart.getCustomerGroup().getId();
 
       CtpExtensionUpdateRequestedResponse extensionResponse = new CtpExtensionUpdateRequestedResponse();
 
       cart.getLineItems().forEach((LineItem lineItem) -> {
         String sku = lineItem.getVariant().getSku();
+        MonetaryAmount customerPrice = null;
+        if (customerId != null) {
+          customerPrice = lookUpPrice(customerId, sku);
+          if (customerPrice != null) {
+            extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem, customerPrice));
+          }
+        }
         // TODO damn the customer Group is just a reference. -> this will never match without fetching it separately and caching it
         // String groupKey = cart.getCustomerGroup().getObj().getKey();
         // interim approach to test: use the raw ID
-        String groupKey = cart.getCustomerGroup().getId();
-        String customerId = cart.getCustomerId();
-        if (groupKey != null) {
+        if (customerPrice == null && groupKey != null) {
           MonetaryAmount groupPrice = lookUpPrice(groupKey, sku);
           if (groupPrice != null) {
             extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem, groupPrice));
           }
         }
-        if (customerId != null) {
-          MonetaryAmount customerPrice = lookUpPrice(customerId, sku);
-            if (customerPrice != null) {
-              extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem, customerPrice));
-            }
-          }
 
         routingContext.response()
           .setStatusCode(200)
