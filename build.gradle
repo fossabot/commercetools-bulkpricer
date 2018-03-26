@@ -1,28 +1,21 @@
-// koloboke buildtime stuff:
-//buildscript {
-//  repositories {
-//    maven { url 'http://repo.spring.io/plugins-release' }
-//  }
-//  dependencies {
-//    classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
-//  }
-//}
-// end koloboke buildtime
+buildscript {
+  repositories {
+    mavenCentral()
+    jcenter()
+  }
+  dependencies {
+    classpath 'se.transmode.gradle:gradle-docker:1.2'
+  }
+}
 
 plugins {
   id 'application'
   id 'com.github.johnrengelman.shadow' version '2.0.2'
 }
 
-repositories {
-  jcenter()
-}
+apply plugin: 'docker'
 
-//configure(allprojects) {
-//  apply plugin: 'propdeps'
-//  apply plugin: 'propdeps-idea'
-//}
-
+group = 'nkuehn'
 version = '1.0-SNAPSHOT'
 sourceCompatibility = '1.8'
 mainClassName = 'io.vertx.core.Launcher'
@@ -34,6 +27,31 @@ def mainVerticleName = 'com.commercetools.bulkpricer.MainVerticle'
 def watchForChange = 'src/**/*'
 def doOnChange = './gradlew classes'
 
+docker {
+  baseImage 'vertx/vertx3-exec'
+  // maintainer 'Nikolaus Kühn "nikolaus.kuehn@commercetools.de"'
+}
+
+task buildDocker(type: Docker) {
+  tagVersion = System.getenv('BUILD_NUMBER') ?: project.version
+  push = Boolean.getBoolean('docker.push')
+  applicationName = 'commercetools-bulkpricer'
+
+  addFile {
+    from "${project.shadowJar.outputs.files.singleFile}"
+    into "/opt/$applicationName/"
+  }
+  exposePort 8080
+  entryPoint = ["sh",  "-c"]
+  defaultCommand = ["java -jar /opt/$applicationName/${project.name}-${project.version}-fat.jar"]
+}
+buildDocker.group = 'docker'
+
+repositories {
+  mavenCentral()
+  jcenter()
+}
+
 dependencies {
 
   compile "io.vertx:vertx-core:$vertxVersion"
@@ -42,9 +60,6 @@ dependencies {
 
   compile "org.eclipse.collections:eclipse-collections-api:$eclipseCollectionsVersion"
   compile "org.eclipse.collections:eclipse-collections:$eclipseCollectionsVersion"
-
-//  provided 'com.koloboke:koloboke-compile:0.5.1'
-//  compile 'com.koloboke:koloboke-impl-common-jdk8:1.0.0'
 
   compile "com.commercetools.sdk.jvm.core:commercetools-models:$commercetoolsJvmSdkVersion"
   compile "com.commercetools.sdk.jvm.core:commercetools-sdk-base:$commercetoolsJvmSdkVersion"
