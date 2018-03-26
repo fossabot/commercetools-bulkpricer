@@ -43,12 +43,10 @@ public class BulkPricer extends AbstractVerticle {
 
     router.post("/prices/for-cart/extend-with-external-prices")
       .consumes("application/json")
-      .produces("application/json")
       .handler(this::handleExtendCartWithExternalPrices);
 
     router.post("/prices/load-from-url")
       .consumes("application/json")
-      .produces("application/json")
       .handler(this::handleLoadJobSubmission);
 
     // Idea: an endpoint that accepts AWS SNS notifications of S3 bucket changes about new or updated fieles ( s3:ObjectCreated:* )
@@ -66,6 +64,7 @@ public class BulkPricer extends AbstractVerticle {
       sharedPrices.forEach(response::put);
     }
     routingContext.response()
+      .putHeader("content-type", "application/json")
       .setStatusCode(200)
       .end(JsonObject.mapFrom(response).encodePrettily());
   }
@@ -75,6 +74,7 @@ public class BulkPricer extends AbstractVerticle {
     if(amount != null){
       MoneyRepresentation money = new MoneyRepresentation(amount);
       routingContext.response()
+        .putHeader("content-type", "application/json")
         .setStatusCode(200).end(JsonObject.mapFrom(money).encodePrettily());
     }else{
       routingContext.response()
@@ -113,6 +113,7 @@ public class BulkPricer extends AbstractVerticle {
         }
 
         routingContext.response()
+          .putHeader("content-type", "application/json")
           .setStatusCode(200)
           .end(JsonUtils.toJsonString(extensionResponse));
       });
