@@ -114,7 +114,7 @@ public class BulkPricer extends AbstractVerticle {
 
         routingContext.response()
           .setStatusCode(200)
-          .end(JsonObject.mapFrom(extensionResponse).toBuffer());
+          .end(JsonUtils.toJsonString(extensionResponse));
       });
 
     } catch (DecodeException e) {

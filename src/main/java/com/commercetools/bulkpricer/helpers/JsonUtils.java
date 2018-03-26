@@ -18,4 +18,8 @@ public class JsonUtils {
   public static <T> T readObject(final String jsonAsString, final Class<T> clazz) {
     return SphereJsonUtils.readObject(jsonAsString,clazz);
   }
+
+  public static String toJsonString(Object obj){
+    return SphereJsonUtils.toJsonString(obj);
+  }
 }
