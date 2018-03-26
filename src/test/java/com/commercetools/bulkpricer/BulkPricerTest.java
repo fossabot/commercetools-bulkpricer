@@ -40,7 +40,7 @@ public class BulkPricerTest {
   }
 
   @Test
-  // @Ignore
+  @Ignore
   public void testCartExtensionRoundtrip(TestContext tc) {
     Async async = tc.async();
     WebClient httpClient = WebClient.create(vertx);
@@ -50,8 +50,14 @@ public class BulkPricerTest {
         if (asyncResult.succeeded()) {
           HttpResponse<Buffer> response = asyncResult.result();
           tc.assertEquals(response.statusCode(), 200);
-          // TODO actually assert the response body (need working test data for that)
+          logger.info(response.bodyAsString());
+          JsonObject responseObj = new JsonObject(response.bodyAsString());
+          // TODO FIXME how to make sure that test price data is already loaded?
+          tc.assertEquals(1, responseObj.getJsonArray("actions").size());
           // should:  line item 5dac682a-257a-4ada-8062-cdcd756a294a  should get a price of 2483688.56 (the first in the example data)
+          // {"actions":[{"action":"setLineItemPrice","lineItemId":"5dac682a-257a-4ada-8062-cdcd756a294a","externalPrice":{"centAmount":248368856,"currencyCode":"EUR"}}]}
+          tc.assertEquals("5dac682a-257a-4ada-8062-cdcd756a294a",responseObj.getJsonArray("actions").getJsonObject(0).getString("lineItemId"));
+          tc.assertEquals(248368856,responseObj.getJsonArray("actions").getJsonObject(0).getJsonObject("externalPrice").getInteger("centAmount"));
         } else {
           tc.fail("calling extension api failed totally");
         }
@@ -104,7 +110,6 @@ public class BulkPricerTest {
   }
 
   @Test
-  @Ignore
   public void testPriceLoadByApi(TestContext tc){
     Async async = tc.async();
     WebClient httpClient = WebClient.create(vertx);
@@ -113,8 +118,7 @@ public class BulkPricerTest {
       .sendBuffer(Buffer.buffer(ExampleData.getPriceLoadRequestAsString("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv")), asyncResult -> {
         if (asyncResult.succeeded()) {
           HttpResponse<Buffer> response = asyncResult.result();
-          tc.assertEquals(200,response.statusCode());
-          // TODO actually assert the response body
+          tc.assertEquals(202,response.statusCode());
         } else {
           tc.fail("calling submit price load api failed totally");
         }

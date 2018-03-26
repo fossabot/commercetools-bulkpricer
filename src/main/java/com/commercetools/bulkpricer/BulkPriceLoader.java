@@ -82,6 +82,7 @@ public class BulkPriceLoader extends AbstractVerticle {
           LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
           sharedPrices.put(groupKey, newPriceList);
         }
+        // TODO save the group metadata locally or e.g. in CTP custom objects to be able to recover state after restart
         ebFuture.complete(newPriceList);
       }, res -> {
         if(res.succeeded()){

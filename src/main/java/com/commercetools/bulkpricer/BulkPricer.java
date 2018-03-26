@@ -37,6 +37,8 @@ public class BulkPricer extends AbstractVerticle {
       .produces("application/json")
       .handler(this::handleGetGroups);
 
+    // TODO: DELETE a group's data.
+
     router.get("/prices/groups/:groupKey/:sku")
       .produces("application/json")
       .handler(this::handleGetPrice);
