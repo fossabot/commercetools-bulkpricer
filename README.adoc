@@ -20,6 +20,10 @@ resources:
  * http://java-performance.info/hashmap-overview-jdk-fastutil-goldman-sachs-hppc-koloboke-trove-january-2015/
 
 
+== Learnings concerning how to work with the commercetools JVM SDK models outside the JVM SDK:
+ * you must use the -parameters  compiler flag to successfully map JSON into commercetools JVM SDK modesl.
+ * you must use the JSON Object Mapper provided by the SphereJsonUtils package in the JVM SDK. There is no public acccess to the necessary custom Jackson modules.
+
 == Prerequisites
 
 * JDK 8+

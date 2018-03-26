@@ -1,7 +1,9 @@
 package com.commercetools.bulkpricer;
 
+import com.commercetools.bulkpricer.helpers.JsonUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.Json;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -14,6 +16,8 @@ public class MainVerticle extends AbstractVerticle {
 
   @Override
   public void start(){
+
+    JsonUtils.configureVertxMappers(Json.mapper, Json.prettyMapper);
 
     final List<AbstractVerticle> verticles = Arrays.asList(
       new BulkPriceLoader(),

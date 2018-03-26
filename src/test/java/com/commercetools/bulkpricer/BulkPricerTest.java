@@ -50,7 +50,7 @@ public class BulkPricerTest {
         if (asyncResult.succeeded()) {
           HttpResponse<Buffer> response = asyncResult.result();
           tc.assertEquals(response.statusCode(), 200);
-          // TODO actually assert the response body
+          // TODO actually assert the response body (need working test data for that)
         } else {
           tc.fail("calling extension api failed totally");
         }

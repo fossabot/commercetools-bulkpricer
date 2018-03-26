@@ -3,13 +3,12 @@ package com.commercetools.bulkpricer;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
 import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import com.commercetools.bulkpricer.helpers.JsonUtils;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -28,9 +27,6 @@ public class BulkPricer extends AbstractVerticle {
 
   @Override
   public void start() {
-
-    Json.mapper.registerModule(new ParameterNamesModule());
-    Json.prettyMapper.registerModule(new ParameterNamesModule());
 
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
@@ -90,18 +86,16 @@ public class BulkPricer extends AbstractVerticle {
     try {
       JsonObject bodyJson = routingContext.getBody().toJsonObject();
       logger.info(bodyJson.toString());
-      CtpExtensionRequestBody extensionRequest = bodyJson.mapTo(CtpExtensionRequestBody.class);
+      CtpExtensionRequestBody extensionRequest = JsonUtils.readObject(bodyJson.toString(), CtpExtensionRequestBody.class);
       Cart cart = extensionRequest.getResource().getObj();
-      String customerId = cart.getCustomerId();
-      String groupKey = cart.getCustomerGroup().getId();
 
       CtpExtensionUpdateRequestedResponse extensionResponse = new CtpExtensionUpdateRequestedResponse();
 
       cart.getLineItems().forEach((LineItem lineItem) -> {
         String sku = lineItem.getVariant().getSku();
         MonetaryAmount customerPrice = null;
-        if (customerId != null) {
-          customerPrice = lookUpPrice(customerId, sku);
+        if (cart.getCustomerId() != null) {
+          customerPrice = lookUpPrice(cart.getCustomerId(), sku);
           if (customerPrice != null) {
             extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem, customerPrice));
           }
@@ -109,8 +103,8 @@ public class BulkPricer extends AbstractVerticle {
         // TODO damn the customer Group is just a reference. -> this will never match without fetching it separately and caching it
         // String groupKey = cart.getCustomerGroup().getObj().getKey();
         // interim approach to test: use the raw ID
-        if (customerPrice == null && groupKey != null) {
-          MonetaryAmount groupPrice = lookUpPrice(groupKey, sku);
+        if (customerPrice == null && cart.getCustomerGroup() != null) {
+          MonetaryAmount groupPrice = lookUpPrice(cart.getCustomerGroup().getId(), sku);
           if (groupPrice != null) {
             extensionResponse.appendUpdateAction(SetLineItemPrice.of(lineItem, groupPrice));
           }
