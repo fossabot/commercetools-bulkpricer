@@ -48,6 +48,11 @@ public class BulkPricer extends AbstractVerticle {
       .produces("application/json")
       .handler(this::handleLoadJobSubmission);
 
+    // Idea: an endpoint that accepts AWS SNS notifications of S3 bucket changes about new or updated fieles ( s3:ObjectCreated:* )
+    // /prices/load-from-url/s3-bucket-message-sink
+    // https://docs.aws.amazon.com/sns/latest/dg/SendMessageToHttp.html
+    // https://docs.aws.amazon.com/AmazonS3/latest/dev/notification-content-structure.html
+
     vertx.createHttpServer().requestHandler(router::accept).listen(8080);
   }
 
