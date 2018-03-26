@@ -19,6 +19,8 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.javamoney.moneta.Money;
 
 import javax.money.MonetaryAmount;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.HashMap;
 
 public class BulkPricer extends AbstractVerticle {
@@ -54,7 +56,7 @@ public class BulkPricer extends AbstractVerticle {
     // https://docs.aws.amazon.com/sns/latest/dg/SendMessageToHttp.html
     // https://docs.aws.amazon.com/AmazonS3/latest/dev/notification-content-structure.html
 
-    vertx.createHttpServer().requestHandler(router::accept).listen(8080);
+    vertx.createHttpServer().requestHandler(router::accept).listen(getPort());
   }
 
   private void handleGetGroups(RoutingContext routingContext){
@@ -150,6 +152,19 @@ public class BulkPricer extends AbstractVerticle {
           .end(response.cause().getMessage());
       }
     });
+  }
+
+  private int getPort(){
+    int port = 8080;
+    try {
+      // heroku convention:
+      String portEnv = System.getenv("PORT");
+      if(portEnv != null){
+        int envPort = NumberFormat.getIntegerInstance().parse(portEnv).intValue();
+        if(envPort > 0) port = envPort;
+      }
+    } catch (ParseException e) { }
+    return port;
   }
 
 }
