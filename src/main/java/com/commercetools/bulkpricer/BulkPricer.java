@@ -3,6 +3,7 @@ package com.commercetools.bulkpricer;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
 import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
+import com.commercetools.bulkpricer.helpers.CorrelationId;
 import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
 import com.commercetools.bulkpricer.helpers.JsonUtils;
 import io.sphere.sdk.carts.Cart;
@@ -83,7 +84,10 @@ public class BulkPricer extends AbstractVerticle {
       }
       vertx.<CustomObject<ShareablePriceList>>executeBlocking(ebFuture ->
           ebFuture.complete(CtpMetadataStorage.deletePriceListMetadata(groupKey)
-        ), res -> { });
+        ), res -> vertx.eventBus().publish(Topics.deleteresults, new JsonObject()
+          .put("statusCode", 200)
+          .put("statusMessage", "deleted price list and metadata for group:" + groupKey))
+      );
       routingContext.response()
         .setStatusCode(202)
         .setStatusMessage("price group deletion request accepted and deleted on current node").end();
@@ -164,7 +168,7 @@ public class BulkPricer extends AbstractVerticle {
   }
 
   private void handleLoadJobSubmission(RoutingContext routingContext) {
-    vertx.eventBus().send("bulkpricer.loadrequests", routingContext.getBodyAsString(), response -> {
+    vertx.eventBus().send(Topics.loadrequests, routingContext.getBodyAsString(), response -> {
       if (response.succeeded()) {
         JsonObject responseMessage = new JsonObject((response.result().body().toString()));
         routingContext.response()

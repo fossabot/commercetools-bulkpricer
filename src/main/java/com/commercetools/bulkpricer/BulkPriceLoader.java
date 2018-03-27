@@ -1,6 +1,7 @@
 package com.commercetools.bulkpricer;
 
 import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
+import com.commercetools.bulkpricer.helpers.CorrelationId;
 import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
 import com.commercetools.bulkpricer.helpers.JsonUtils;
 import com.commercetools.bulkpricer.helpers.MemoryUsage;
@@ -40,7 +41,7 @@ public class BulkPriceLoader extends AbstractVerticle {
 
   @Override
   public void start() {
-    loadRequestsConsumer = vertx.eventBus().consumer("bulkpricer.loadrequests", this::handleLoadRequest);
+    loadRequestsConsumer = vertx.eventBus().consumer(Topics.loadrequests, this::handleLoadRequest);
 
     CtpMetadataStorage.getAllStoredListMetadata().forEach(priceListMetadataCO -> {
         ShareablePriceList list = priceListMetadataCO.getValue();
@@ -94,7 +95,7 @@ public class BulkPriceLoader extends AbstractVerticle {
       ebFuture.complete(newPriceList);
     }, res -> {
       if (res.succeeded()) {
-        vertx.eventBus().send("bulkpricer.loadresults", new JsonObject()
+        vertx.eventBus().send(Topics.loadresults, new JsonObject()
             .put("statusCode", res.result().getLoadStatus())
             .put("statusMessage", res.result().getLoadStatusMessage())
           , msgOptions);

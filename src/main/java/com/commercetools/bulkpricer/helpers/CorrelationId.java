@@ -1,4 +1,4 @@
-package com.commercetools.bulkpricer;
+package com.commercetools.bulkpricer.helpers;
 
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
