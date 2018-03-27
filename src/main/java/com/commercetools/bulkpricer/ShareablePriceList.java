@@ -40,7 +40,6 @@ public class ShareablePriceList implements Shareable {
   public ShareablePriceList(@JsonProperty("groupKey") String groupKey, @JsonProperty("currencyCode") String currencyCode, @JsonProperty("duplicateSkuCount") Integer duplicateSkuCount, @JsonProperty("fileURL") String fileURL) {
     this.groupKey = groupKey;
     this.currency = Monetary.getCurrency(currencyCode);
-    // FYI. uniqueSkuCount not used, just in the signature to allow correct deserialization.
     this.duplicateSkuCount = duplicateSkuCount;
     this.fileURL = fileURL;
   }

@@ -1,6 +1,6 @@
 package com.commercetools.bulkpricer;
 
-import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
+import com.commercetools.bulkpricer.apimodel.CtpMoneyRepresentation;
 import com.commercetools.bulkpricer.helpers.CorrelationId;
 import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
 import com.commercetools.bulkpricer.helpers.JsonUtils;
@@ -137,7 +137,7 @@ public class BulkPriceLoader extends AbstractVerticle {
     String valStr = line.substring(separatorPosition + 1, line.length());
 
     MonetaryAmount price = FastMoney.of(NumberFormat.getNumberInstance(Locale.US).parse(valStr), currency);
-    int centAmount = new MoneyRepresentation(price).getCentAmount();
+    int centAmount = new CtpMoneyRepresentation(price).getCentAmount();
     return PrimitiveTuples.pair(sku, centAmount);
   }
 

@@ -11,13 +11,13 @@ import java.util.Objects;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-public final class MoneyRepresentation {
+public final class CtpMoneyRepresentation {
   private final Integer centAmount;
   private final String currencyCode;
 
   private static final DefaultRoundingProvider ROUNDING_PROVIDER = new DefaultRoundingProvider();
 
-  private MoneyRepresentation(final Integer centAmount, final String currencyCode) {
+  private CtpMoneyRepresentation(final Integer centAmount, final String currencyCode) {
     this.centAmount = centAmount;
     this.currencyCode = currencyCode;
   }
@@ -27,7 +27,7 @@ public final class MoneyRepresentation {
    * Money can't represent cent fractions. The value will be rounded to nearest cent value using RoundingMode.HALF_EVEN.
    * @param monetaryAmount the amount with currency to transform
    */
-  public MoneyRepresentation(final MonetaryAmount monetaryAmount) {
+  public CtpMoneyRepresentation(final MonetaryAmount monetaryAmount) {
     this(amountToCents(monetaryAmount), requireValidCurrencyCode(monetaryAmount.getCurrency().getCurrencyCode()));
   }
 
@@ -54,7 +54,7 @@ public final class MoneyRepresentation {
         .build());
     return monetaryAmount
       .with(ROUNDING)
-      .query(MoneyRepresentation::queryFrom);
+      .query(CtpMoneyRepresentation::queryFrom);
   }
 
   private static Integer queryFrom(MonetaryAmount amount) {

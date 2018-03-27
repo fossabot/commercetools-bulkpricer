@@ -2,7 +2,7 @@ package com.commercetools.bulkpricer;
 
 import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
-import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
+import com.commercetools.bulkpricer.apimodel.CtpMoneyRepresentation;
 import com.commercetools.bulkpricer.helpers.CorrelationId;
 import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
 import com.commercetools.bulkpricer.helpers.JsonUtils;
@@ -101,7 +101,7 @@ public class BulkPricer extends AbstractVerticle {
   private void handleGetPrice(RoutingContext routingContext) {
     MonetaryAmount amount = lookUpPrice(routingContext.pathParam("groupKey"), routingContext.pathParam("sku"));
     if (amount != null) {
-      MoneyRepresentation money = new MoneyRepresentation(amount);
+      CtpMoneyRepresentation money = new CtpMoneyRepresentation(amount);
       routingContext.response()
         .putHeader("content-type", "application/json")
         .setStatusCode(200).end(JsonObject.mapFrom(money).encodePrettily());
