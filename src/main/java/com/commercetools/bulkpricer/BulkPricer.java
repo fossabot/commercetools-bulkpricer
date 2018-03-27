@@ -3,10 +3,12 @@ package com.commercetools.bulkpricer;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
 import com.commercetools.bulkpricer.apimodel.MoneyRepresentation;
+import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
 import com.commercetools.bulkpricer.helpers.JsonUtils;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
+import io.sphere.sdk.customobjects.CustomObject;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -37,7 +39,8 @@ public class BulkPricer extends AbstractVerticle {
       .produces("application/json")
       .handler(this::handleGetGroups);
 
-    // TODO: DELETE a group's data.
+    router.delete("/prices/groups/:groupKey")
+      .handler(this::handleDeletePriceGroup);
 
     router.get("/prices/groups/:groupKey/:sku")
       .produces("application/json")
@@ -59,7 +62,7 @@ public class BulkPricer extends AbstractVerticle {
     vertx.createHttpServer().requestHandler(router::accept).listen(getPort());
   }
 
-  private void handleGetGroups(RoutingContext routingContext){
+  private void handleGetGroups(RoutingContext routingContext) {
     LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
     HashMap<String, Object> response = new HashMap<>();
     if (sharedPrices != null) {
@@ -71,14 +74,34 @@ public class BulkPricer extends AbstractVerticle {
       .end(JsonObject.mapFrom(response).encodePrettily());
   }
 
+  private void handleDeletePriceGroup(RoutingContext routingContext) {
+    String groupKey = routingContext.pathParam("groupKey");
+    if (groupKey != null) {
+      LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
+      if(sharedPrices.containsKey(groupKey)){
+        sharedPrices.remove(groupKey);
+      }
+      vertx.<CustomObject<ShareablePriceList>>executeBlocking(ebFuture ->
+          ebFuture.complete(CtpMetadataStorage.deletePriceListMetadata(groupKey)
+        ), res -> { });
+      routingContext.response()
+        .setStatusCode(202)
+        .setStatusMessage("price group deletion request accepted and deleted on current node").end();
+    }else{
+      routingContext.response()
+        .setStatusCode(404)
+        .setStatusMessage("no price list with given groupKey found");
+    }
+  }
+
   private void handleGetPrice(RoutingContext routingContext) {
     MonetaryAmount amount = lookUpPrice(routingContext.pathParam("groupKey"), routingContext.pathParam("sku"));
-    if(amount != null){
+    if (amount != null) {
       MoneyRepresentation money = new MoneyRepresentation(amount);
       routingContext.response()
         .putHeader("content-type", "application/json")
         .setStatusCode(200).end(JsonObject.mapFrom(money).encodePrettily());
-    }else{
+    } else {
       routingContext.response()
         .setStatusCode(404)
         .setStatusMessage("Could not find a price for given groupKey and SKU").end();
@@ -146,27 +169,28 @@ public class BulkPricer extends AbstractVerticle {
         JsonObject responseMessage = new JsonObject((response.result().body().toString()));
         routingContext.response()
           .setStatusCode(responseMessage.getInteger("statusCode"))
-          .putHeader("X-Correlation-ID", response.result().headers().get("X-Correlation-ID"))
+          .putHeader(CorrelationId.headerName, response.result().headers().get(CorrelationId.headerName))
           .setStatusMessage(responseMessage.getString("statusMessage")).end();
       } else {
         logger.error("couldn't submit load job to loader via event bus", response.cause());
         routingContext.response().setStatusCode(500)
-          .putHeader("X-Correlation-ID", response.result().headers().get("X-Correlation-ID"))
+          .putHeader(CorrelationId.headerName, response.result().headers().get(CorrelationId.headerName))
           .end(response.cause().getMessage());
       }
     });
   }
 
-  private int getPort(){
+  private int getPort() {
     int port = 8080;
     try {
       // heroku convention:
       String portEnv = System.getenv("PORT");
-      if(portEnv != null){
+      if (portEnv != null) {
         int envPort = NumberFormat.getIntegerInstance().parse(portEnv).intValue();
-        if(envPort > 0) port = envPort;
+        if (envPort > 0) port = envPort;
       }
-    } catch (ParseException e) { }
+    } catch (ParseException e) {
+    }
     return port;
   }
 

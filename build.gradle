@@ -63,7 +63,8 @@ dependencies {
   compile "org.eclipse.collections:eclipse-collections:$eclipseCollectionsVersion"
 
   compile "com.commercetools.sdk.jvm.core:commercetools-models:$commercetoolsJvmSdkVersion"
-  compile "com.commercetools.sdk.jvm.core:commercetools-sdk-base:$commercetoolsJvmSdkVersion"
+  compile "com.commercetools.sdk.jvm.core:commercetools-java-client-apache-async:$commercetoolsJvmSdkVersion"
+  compile "com.commercetools.sdk.jvm.core:commercetools-convenience:$commercetoolsJvmSdkVersion"
 
   testCompile "junit:junit:4.12"
   testCompile "io.vertx:vertx-unit:$vertxVersion"

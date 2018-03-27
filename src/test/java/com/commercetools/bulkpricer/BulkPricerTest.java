@@ -86,7 +86,7 @@ public class BulkPricerTest {
   public void testRemotePriceFileLoader(TestContext tc) throws IOException, ParseException {
     BulkPriceLoader bpl = new BulkPriceLoader();
     // IntIntHashMap randomPrices = bpl.readRemotePrices("http://localhost:8081/random-prices/1000", Monetary.getCurrency("EUR"));
-    ShareablePriceList randomPrices = bpl.readRemotePrices("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv", Monetary.getCurrency("EUR"), "test-group");
+    ShareablePriceList randomPrices = bpl.readRemotePrices(ExampleData.millionPricesFileUrl, Monetary.getCurrency("EUR"), "test-group");
     tc.assertEquals(999744, randomPrices.getPrices().size());
     tc.assertEquals((999999 - 999744), randomPrices.getDuplicateSkuCount());
   }
@@ -95,7 +95,7 @@ public class BulkPricerTest {
   public void testPriceLoadByEvent(TestContext tc){
     vertx.eventBus().send(
       "bulkpricer.loadrequests",
-      ExampleData.getPriceLoadRequestAsString("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv"),
+      ExampleData.getPriceLoadRequestAsString(ExampleData.millionPricesFileUrl),
       response -> {
         tc.assertTrue(response.succeeded());
         JsonObject respBody = new JsonObject(response.result().body().toString());
@@ -115,7 +115,7 @@ public class BulkPricerTest {
     WebClient httpClient = WebClient.create(vertx);
     httpClient.post(8080, "localhost", "/prices/load-from-url")
       .putHeader("content-type", "application/json")
-      .sendBuffer(Buffer.buffer(ExampleData.getPriceLoadRequestAsString("https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv")), asyncResult -> {
+      .sendBuffer(Buffer.buffer(ExampleData.getPriceLoadRequestAsString(ExampleData.millionPricesFileUrl)), asyncResult -> {
         if (asyncResult.succeeded()) {
           HttpResponse<Buffer> response = asyncResult.result();
           tc.assertEquals(202,response.statusCode());

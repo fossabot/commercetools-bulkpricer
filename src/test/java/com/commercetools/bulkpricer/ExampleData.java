@@ -8,6 +8,9 @@ import java.util.Random;
 
 public class ExampleData {
 
+  public static String millionPricesFileUrl = "https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/999999-prices.csv";
+  public static String tenPricesFileUrl = "https://github.com/nkuehn/commercetools-bulkpricer/raw/master/src/test/resources/10-prices.csv";
+
   public static String getPriceLoadRequestAsString(String fileURL){
     return "{\n" +
       "  \"groupKey\": \"test-customer-id\",\n" +
