@@ -20,8 +20,8 @@ public class MainVerticle extends AbstractVerticle {
     JsonUtils.configureVertxMappers(Json.mapper, Json.prettyMapper);
 
     final List<AbstractVerticle> verticles = Arrays.asList(
-      new BulkPriceLoader(),
-      new BulkPricer(),
+      new BulkPriceProvider(),
+      new BulkPriceHttpApi(),
       new PriceFileServerTestVerticle());
 
     verticles.forEach(verticle -> vertx.deployVerticle(verticle, deployResponse -> {

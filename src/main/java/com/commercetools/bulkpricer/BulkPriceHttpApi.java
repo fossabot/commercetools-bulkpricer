@@ -24,11 +24,14 @@ import org.javamoney.moneta.Money;
 import javax.money.MonetaryAmount;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
-public class BulkPricer extends AbstractVerticle {
+public class BulkPriceHttpApi extends AbstractVerticle {
 
-  private final Logger logger = LoggerFactory.getLogger(BulkPricer.class);
+  private final Logger logger = LoggerFactory.getLogger(BulkPriceHttpApi.class);
 
   @Override
   public void start() {
@@ -39,6 +42,10 @@ public class BulkPricer extends AbstractVerticle {
     router.get("/prices/groups")
       .produces("application/json")
       .handler(this::handleGetGroups);
+
+    // e.g.  /prices/groups/mygroup?1235,5466757,A35548700657,78478Z5
+    router.get("/prices/groups/:groupKey")
+      .handler(this::handleQueryPrices);
 
     router.delete("/prices/groups/:groupKey")
       .handler(this::handleDeletePriceGroup);
@@ -110,6 +117,22 @@ public class BulkPricer extends AbstractVerticle {
         .setStatusCode(404)
         .setStatusMessage("Could not find a price for given groupKey and SKU").end();
     }
+  }
+
+  private void handleQueryPrices(RoutingContext routingContext){
+    String groupKey = routingContext.request().getParam("groupKey");
+    ArrayList<String> skus = new ArrayList<>(Arrays.asList(routingContext.request().getParam("skus").split(",")));
+    Map<String, CtpMoneyRepresentation> responseBody = new HashMap<>();
+    skus.forEach(sku -> {
+      MonetaryAmount price = lookUpPrice(groupKey,sku);
+      if(price != null){
+        responseBody.put(sku, new CtpMoneyRepresentation(price));
+      }
+      routingContext.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(200).end(JsonUtils.toJsonString(responseBody));
+    });
+
   }
 
   private void handleExtendCartWithExternalPrices(RoutingContext routingContext) {

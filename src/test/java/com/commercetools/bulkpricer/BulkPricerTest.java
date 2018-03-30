@@ -24,7 +24,7 @@ import java.text.ParseException;
 @RunWith(VertxUnitRunner.class)
 public class BulkPricerTest {
 
-  private final Logger logger = LoggerFactory.getLogger(BulkPricer.class);
+  private final Logger logger = LoggerFactory.getLogger(BulkPriceHttpApi.class);
 
   private Vertx vertx;
 
@@ -67,7 +67,7 @@ public class BulkPricerTest {
 
   @Test
   public void testLineParser(TestContext tc) throws ParseException {
-    BulkPriceLoader bpl = new BulkPriceLoader();
+    BulkPriceProvider bpl = new BulkPriceProvider();
     tc.assertEquals(
       PrimitiveTuples.pair("123456", 9998)
       , bpl.parseLine("123456,99.98", Monetary.getCurrency("EUR"))
@@ -84,7 +84,7 @@ public class BulkPricerTest {
 
   @Test
   public void testRemotePriceFileLoader(TestContext tc) throws IOException, ParseException {
-    BulkPriceLoader bpl = new BulkPriceLoader();
+    BulkPriceProvider bpl = new BulkPriceProvider();
     // IntIntHashMap randomPrices = bpl.readRemotePrices("http://localhost:8081/random-prices/1000", Monetary.getCurrency("EUR"));
     ShareablePriceList randomPrices = bpl.readRemotePrices(ExampleData.millionPricesFileUrl, Monetary.getCurrency("EUR"), "test-group");
     tc.assertEquals(999744, randomPrices.getPrices().size());

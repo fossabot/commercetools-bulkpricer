@@ -33,9 +33,9 @@ import java.util.Locale;
 import java.util.WeakHashMap;
 import java.util.stream.Stream;
 
-public class BulkPriceLoader extends AbstractVerticle {
+public class BulkPriceProvider extends AbstractVerticle {
 
-  private final Logger logger = LoggerFactory.getLogger(BulkPricer.class);
+  private final Logger logger = LoggerFactory.getLogger(BulkPriceHttpApi.class);
 
   private MessageConsumer<String> loadRequestsConsumer;
 
