@@ -5,6 +5,10 @@ import com.commercetools.bulkpricer.helpers.CorrelationId;
 import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
 import com.commercetools.bulkpricer.helpers.JsonUtils;
 import com.commercetools.bulkpricer.helpers.MemoryUsage;
+import com.commercetools.bulkpricer.messages.JsonBusMessage;
+import com.commercetools.bulkpricer.messages.JsonBusMessageCodec;
+import com.commercetools.bulkpricer.messages.PriceLookUpRequest;
+import com.commercetools.bulkpricer.messages.PriceLookUpResponse;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
@@ -29,7 +33,9 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.stream.Stream;
 
@@ -38,10 +44,13 @@ public class BulkPriceProvider extends AbstractVerticle {
   private final Logger logger = LoggerFactory.getLogger(BulkPriceHttpApi.class);
 
   private MessageConsumer<String> loadRequestsConsumer;
+  private MessageConsumer<JsonBusMessage<PriceLookUpRequest>> lookUpPriceConsumer;
 
   @Override
   public void start() {
+    vertx.eventBus().registerDefaultCodec(JsonBusMessage.class, new JsonBusMessageCodec());
     loadRequestsConsumer = vertx.eventBus().consumer(Topics.loadrequests, this::handleLoadRequest);
+    lookUpPriceConsumer = vertx.eventBus().consumer(Topics.lookuprequests, this::handleLookUpPrice);
 
     CtpMetadataStorage.getAllStoredListMetadata().forEach(priceListMetadataCO -> {
         ShareablePriceList list = priceListMetadataCO.getValue();
@@ -59,10 +68,36 @@ public class BulkPriceProvider extends AbstractVerticle {
   @Override
   public void stop() {
     loadRequestsConsumer.unregister();
+    lookUpPriceConsumer.unregister();
+  }
+
+  private void  handleLookUpPrice(Message<JsonBusMessage<PriceLookUpRequest>> message) {
+    PriceLookUpRequest priceLookUpRequest = message.body().payload;
+    PriceLookUpResponse lookUpResponse = new PriceLookUpResponse();
+
+    LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
+    if (sharedPrices == null) {
+      message.reply(lookUpResponse);
+    }
+    priceLookUpRequest.groupKeys.forEach(groupKey -> {
+      ShareablePriceList groupPriceList = sharedPrices.get(groupKey);
+      if (groupPriceList != null) {
+        // TODO check currencyCode (filter?)
+        Map<String, Integer> skuPrices = new HashMap<>();
+        priceLookUpRequest.skus.forEach(sku ->{
+          Integer priceCentAmount = groupPriceList.getPrices().getIfAbsent(sku, -1);
+          if(priceCentAmount != -1){
+            skuPrices.put(sku, priceCentAmount);
+          }
+          lookUpResponse.prices.put(groupKey, skuPrices);
+        });
+      }
+    });
+    message.reply(new JsonBusMessage<PriceLookUpResponse>().withPayload(lookUpResponse));
   }
 
   private void handleLoadRequest(Message<String> message) {
-    // TODO parse into PriceLoadRequest object (TODO or use the ShareablePriceList like everywhere else)
+    // TODO migrate to typed Message<JsonBusMessage<PriceLookUpRequest>>
     JsonObject params = new JsonObject(message.body());
     String correlationId = CorrelationId.getIfNotPresentInMessage(message);
     DeliveryOptions msgOptions = new DeliveryOptions().addHeader(CorrelationId.headerName, correlationId);

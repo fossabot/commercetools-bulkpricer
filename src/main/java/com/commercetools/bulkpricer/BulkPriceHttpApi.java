@@ -6,6 +6,8 @@ import com.commercetools.bulkpricer.apimodel.CtpMoneyRepresentation;
 import com.commercetools.bulkpricer.helpers.CorrelationId;
 import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
 import com.commercetools.bulkpricer.helpers.JsonUtils;
+import com.commercetools.bulkpricer.messages.JsonBusMessage;
+import com.commercetools.bulkpricer.messages.JsonBusMessageCodec;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
@@ -35,6 +37,8 @@ public class BulkPriceHttpApi extends AbstractVerticle {
 
   @Override
   public void start() {
+
+    vertx.eventBus().registerDefaultCodec(JsonBusMessage.class, new JsonBusMessageCodec());
 
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());

@@ -22,3 +22,6 @@ gradle-app.setting
 .idea
 commercetools-bulkpricer.iml
 out
+.classpath
+.project
+.vscode

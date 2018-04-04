@@ -6,5 +6,5 @@ public class Topics {
   public static String loadrequests = "bulkpricer.loadrequests";
   public static String loadresults = "bulkpricer.loadresults";
   public static String deleteresults = "bulkpricer.deleteresults";
-
+  public static String lookuprequests = "bulkpricer.lookuprequests";
 }
