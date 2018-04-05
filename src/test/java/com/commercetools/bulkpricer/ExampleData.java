@@ -2,6 +2,7 @@ package com.commercetools.bulkpricer;
 
 import io.vertx.core.buffer.Buffer;
 
+import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Random;
@@ -233,9 +234,13 @@ public class ExampleData {
     Random rnd = new Random();
     Buffer buf = Buffer.buffer(amount * 20);
     for (int i = 0; i < amount; i++){
-      buf.appendString(new Integer(rnd.nextInt()).toString() + "," + new Float(rnd.nextInt() / 100.0).toString() + "\n");
+      buf.appendString(new Integer(rnd.nextInt() & Integer.MAX_VALUE).toString());
+      buf.appendString(",");
+      buf.appendString(new BigDecimal(rnd.nextInt() & Integer.MAX_VALUE).divide(new BigDecimal(100)).toString());
+      buf.appendString("\n");
     }
     return buf;
   }
+
 
 }

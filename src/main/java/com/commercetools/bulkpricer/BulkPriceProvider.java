@@ -119,7 +119,7 @@ public class BulkPriceProvider extends AbstractVerticle {
         ), res -> vertx.eventBus().publish(Topics.deleteresults, new HttpLikeStatusMessage(
         200,
         "deleted price list and metadata for group:" + request.groupKey).toJsonObject(),
-        CorrelationId.getDeliveryOptions(message)
+      CorrelationId.getDeliveryOptions(message)
       )
     );
   }
@@ -147,12 +147,21 @@ public class BulkPriceProvider extends AbstractVerticle {
   }
 
   public ShareablePriceList readRemotePrices(String fileURL, CurrencyUnit currency, String groupKey) {
+    InputStream remoteStream;
+    try {
+      remoteStream = new URL(fileURL).openConnection().getInputStream();
+    } catch (IOException e) {
+      return new ShareablePriceList(groupKey, null, currency, null, fileURL, 500, "IO error loading remote price list " + e.getMessage());
+    }
+    return readPricesFromByteStream(remoteStream, fileURL, currency, groupKey);
+  }
+
+  public ShareablePriceList readPricesFromByteStream(InputStream bytes, String fileURL, CurrencyUnit currency, String groupKey) {
     try {
       long memoryBefore = MemoryUsage.getUsedMb();
       MutableObjectIntMap<String> prices = new ObjectIntHashMap<>();
-      InputStream remoteStream = null;
-      remoteStream = new URL(fileURL).openConnection().getInputStream();
-      BufferedReader reader = new BufferedReader(new InputStreamReader(remoteStream));
+
+      BufferedReader reader = new BufferedReader(new InputStreamReader(bytes));
       Stream<String> lines = reader.lines();
       Integer duplicateSkuCount = 0;
       for (String line : (Iterable<String>) lines::iterator) {
@@ -166,8 +175,6 @@ public class BulkPriceProvider extends AbstractVerticle {
       logger.info("loaded price list, used memory difference: " + (MemoryUsage.getUsedMb() - memoryBefore));
       logger.info(MemoryUsage.memoryReport());
       return new ShareablePriceList(groupKey, prices, currency, duplicateSkuCount, fileURL, 201, "loaded price list from " + fileURL);
-    } catch (IOException e) {
-      return new ShareablePriceList(groupKey, null, currency, null, fileURL, 500, "IO error loading remote price list " + e.getMessage());
     } catch (ParseException e) {
       return new ShareablePriceList(groupKey, null, currency, null, fileURL, 500, "could not parse remote price list " + e.getMessage());
     }

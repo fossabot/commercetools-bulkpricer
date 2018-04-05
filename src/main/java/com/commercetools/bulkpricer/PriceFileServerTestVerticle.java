@@ -26,10 +26,11 @@ public class PriceFileServerTestVerticle extends AbstractVerticle {
 
     vertx.createHttpServer().requestHandler(router::accept).listen(8081);
   }
-  private Buffer getRandomPriceLines(int amount){
+
+  private Buffer getRandomPriceLines(int amount) {
     Random rnd = new Random();
     Buffer buf = Buffer.buffer(amount * 20);
-    for (int i = 0; i < amount; i++){
+    for (int i = 0; i < amount; i++) {
       buf.appendString(new Integer(rnd.nextInt() & Integer.MAX_VALUE).toString());
       buf.appendString(",");
       buf.appendString(new BigDecimal(rnd.nextInt() & Integer.MAX_VALUE).divide(new BigDecimal(100)).toString());
@@ -37,6 +38,7 @@ public class PriceFileServerTestVerticle extends AbstractVerticle {
     }
     return buf;
   }
+
   private Buffer getRandomPriceLines(String amount){
     try {
       int a = NumberFormat.getIntegerInstance().parse(amount).intValue();

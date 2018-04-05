@@ -16,12 +16,14 @@ It is based on the vert.x Gradle Starter and the ver.x Web REST example.
 
 Originally a learning project.
 
+At 300k SKUs at nonscientific (on my machine) test was able to load ca 200 price lists, i.e. ca. 61 million prices into 1,8 GB of heap.
+realistic are rather 40 Million because the memory pressure makes the whole service slow from a certain point on.
+
 == High-Level Ideas:
- * switch to distributed vert.x cluster for redundancy and sharding (will require significant to the message semantics and the way prices are looked up. Likely also the actual shared data structures.
+ * switch to distributed vert.x cluster for redundancy and sharding (will require some changes to the message semantics).
  * Provide OOTB kubernetes infra / documentation to easily fire up a cluster in production (locally easy via the vertx CLI)
  * Increase Test coverage a lot.
  * Provide API documentation
- * Test memory usage with extreme amounts of data to get an idea of the limits
  * Better logging of the actual requests
  * Secure the public APIs.
 

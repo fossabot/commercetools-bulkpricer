@@ -5,6 +5,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.shareddata.LocalMap;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -18,7 +19,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.money.Monetary;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.text.ParseException;
 
 @RunWith(VertxUnitRunner.class)
@@ -124,6 +127,27 @@ public class BulkPricerTest {
         }
         async.complete();
       });
+  }
+
+  @Test
+  @Ignore
+  public void testMemoryStress(TestContext tc){
+    BulkPriceProvider bpp = new BulkPriceProvider();
+    Integer skuCount = 300000;
+    String fileContent = ExampleData.getRandomPriceLines(skuCount).toString();
+    logger.info("loading the same 300k SKU price list until memory fails");
+    Integer loopCount = 0;
+    while(true){
+      loopCount++;
+      LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
+      String groupKey = "test-group-key-" + loopCount;
+      sharedPrices.put(groupKey, bpp.readPricesFromByteStream(new ByteArrayInputStream(fileContent.getBytes()),
+        "test-url-" + loopCount,
+        Monetary.getCurrency("EUR"),
+        groupKey));
+      Integer priceListCount = sharedPrices.size();
+      logger.info(priceListCount + " price Groups loaded. Price count: " + NumberFormat.getNumberInstance().format(skuCount * priceListCount));
+    }
   }
 
 }
