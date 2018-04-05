@@ -1,6 +1,6 @@
 package com.commercetools.bulkpricer;
 
-import com.commercetools.bulkpricer.helpers.JsonUtils;
+import io.sphere.sdk.json.SphereJsonUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
@@ -17,7 +17,9 @@ public class MainVerticle extends AbstractVerticle {
   @Override
   public void start(){
 
-    JsonUtils.configureVertxMappers(Json.mapper, Json.prettyMapper);
+    // enable the core verx JSON facilities to work with CT JVM SDK models and conventions
+    SphereJsonUtils.decorateObjectMapper(Json.mapper);
+    SphereJsonUtils.decorateObjectMapper(Json.prettyMapper);
 
     final List<AbstractVerticle> verticles = Arrays.asList(
       new BulkPriceProvider(),

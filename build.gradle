@@ -62,6 +62,9 @@ dependencies {
   compile "org.eclipse.collections:eclipse-collections-api:$eclipseCollectionsVersion"
   compile "org.eclipse.collections:eclipse-collections:$eclipseCollectionsVersion"
 
+  // pull in an own SDK locally
+  compile files ("../commercetools-jvm-sdk/commercetools-sdk-base/target/commercetools-sdk-base-1.31.0-SNAPSHOT.jar")
+
   compile "com.commercetools.sdk.jvm.core:commercetools-models:$commercetoolsJvmSdkVersion"
   compile "com.commercetools.sdk.jvm.core:commercetools-java-client-apache-async:$commercetoolsJvmSdkVersion"
   compile "com.commercetools.sdk.jvm.core:commercetools-convenience:$commercetoolsJvmSdkVersion"

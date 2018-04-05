@@ -95,7 +95,7 @@ public class BulkPricerTest {
   public void testPriceLoadByEvent(TestContext tc){
     vertx.eventBus().send(
       "bulkpricer.loadrequests",
-      ExampleData.getPriceLoadRequestAsString(ExampleData.millionPricesFileUrl),
+      Buffer.buffer(ExampleData.getPriceLoadRequestAsString(ExampleData.millionPricesFileUrl)).toJsonObject(),
       response -> {
         tc.assertTrue(response.succeeded());
         JsonObject respBody = new JsonObject(response.result().body().toString());

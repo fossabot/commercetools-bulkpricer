@@ -5,7 +5,7 @@ This is a vert.x based HTTP service providing an commercetools API extension.
 It is intended to keep large amounts of customer group (price list) and customer specific SKU prices in memory very efficiently.
 I.e. it's designed for cases where commercetools is not the system of record for customer specific prices and the number of prices per SKU is high and bulk updates are frequent and "dumb" (e.g. not differential, not a stream of actual changes).
 
-See BulkPricer.java for the HTTP API paths (To be documented here or in an OpenAPI spec)
+See BulkPricer.java for the HTTP API paths
 
 The API extension serves cart creations and updates and overrides the cart price with an external price if it finds one for the given customer group or customer ID in its cache.
 It does not complain if it does not find a more specific price, assuming the base price can be offered in any case.
@@ -16,13 +16,26 @@ It is based on the vert.x Gradle Starter and the ver.x Web REST example.
 
 Originally a learning project.
 
-resources:
- * http://java-performance.info/hashmap-overview-jdk-fastutil-goldman-sachs-hppc-koloboke-trove-january-2015/
+== High-Level Ideas:
+ * switch to distributed vert.x cluster for redundancy and sharding (will require significant to the message semantics and the way prices are looked up. Likely also the actual shared data structures.
+ * Provide OOTB kubernetes infra / documentation to easily fire up a cluster in production (locally easy via the vertx CLI)
+ * Increase Test coverage a lot.
+ * Provide API documentation
+ * Test memory usage with extreme amounts of data to get an idea of the limits
+ * Better logging of the actual requests
+ * Secure the public APIs.
+
+== Reading Resources:
+
+ * TODO vert.x documentation.
+ * http://java-performance.info/hashmap-overview-jdk-fastutil-goldman-sachs-hppc-koloboke-trove-january-2015/ (performance of specialized primitive collections)
+ * https://www.sigs-datacom.de/uploads/tx_dmjournals/grammes_lehmann_schaal_JS_05_14_gVcQ.pdf (german intro to vert.x)
 
 
 == Learnings concerning how to work with the commercetools JVM SDK models outside the JVM SDK:
  * you must use the -parameters  compiler flag to successfully map JSON into commercetools JVM SDK modesl.
  * you must use the JSON Object Mapper provided by the SphereJsonUtils package in the JVM SDK. There is no public acccess to the necessary custom Jackson modules.
+ * it would be nice to have the data structures received and provided by API extensions available in the SDK.
 
 == Prerequisites
 

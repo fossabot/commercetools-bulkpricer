@@ -4,14 +4,11 @@ import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
 import com.commercetools.bulkpricer.apimodel.CtpMoneyRepresentation;
 import com.commercetools.bulkpricer.helpers.CorrelationId;
-import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
 import com.commercetools.bulkpricer.helpers.JsonUtils;
-import com.commercetools.bulkpricer.messages.JsonBusMessage;
-import com.commercetools.bulkpricer.messages.JsonBusMessageCodec;
+import com.commercetools.bulkpricer.messages.PriceGroupDeleteRequest;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
-import io.sphere.sdk.customobjects.CustomObject;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -37,8 +34,6 @@ public class BulkPriceHttpApi extends AbstractVerticle {
 
   @Override
   public void start() {
-
-    vertx.eventBus().registerDefaultCodec(JsonBusMessage.class, new JsonBusMessageCodec());
 
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
@@ -75,6 +70,7 @@ public class BulkPriceHttpApi extends AbstractVerticle {
   }
 
   private void handleGetGroups(RoutingContext routingContext) {
+    // executed directly and locally since all nodes hold all prices
     LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
     HashMap<String, Object> response = new HashMap<>();
     if (sharedPrices != null) {
@@ -89,27 +85,22 @@ public class BulkPriceHttpApi extends AbstractVerticle {
   private void handleDeletePriceGroup(RoutingContext routingContext) {
     String groupKey = routingContext.pathParam("groupKey");
     if (groupKey != null) {
-      LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
-      if(sharedPrices.containsKey(groupKey)){
-        sharedPrices.remove(groupKey);
-      }
-      vertx.<CustomObject<ShareablePriceList>>executeBlocking(ebFuture ->
-          ebFuture.complete(CtpMetadataStorage.deletePriceListMetadata(groupKey)
-        ), res -> vertx.eventBus().publish(Topics.deleteresults, new JsonObject()
-          .put("statusCode", 200)
-          .put("statusMessage", "deleted price list and metadata for group:" + groupKey))
-      );
+      vertx.eventBus().publish(
+        Topics.deleteresults,
+        JsonObject.mapFrom(new PriceGroupDeleteRequest(groupKey)),
+        CorrelationId.getDeliveryOptions(routingContext));
       routingContext.response()
         .setStatusCode(202)
-        .setStatusMessage("price group deletion request accepted and deleted on current node").end();
+        .setStatusMessage("price group deletion request accepted").end();
     }else{
       routingContext.response()
-        .setStatusCode(404)
-        .setStatusMessage("no price list with given groupKey found");
+        .setStatusCode(400)
+        .setStatusMessage("priceGroup not given");
     }
   }
 
   private void handleGetPrice(RoutingContext routingContext) {
+    // executed directly and locally since all nodes hold all prices
     MonetaryAmount amount = lookUpPrice(routingContext.pathParam("groupKey"), routingContext.pathParam("sku"));
     if (amount != null) {
       CtpMoneyRepresentation money = new CtpMoneyRepresentation(amount);
@@ -124,6 +115,7 @@ public class BulkPriceHttpApi extends AbstractVerticle {
   }
 
   private void handleQueryPrices(RoutingContext routingContext){
+    // executed directly and locally since all nodes hold all prices
     String groupKey = routingContext.request().getParam("groupKey");
     ArrayList<String> skus = new ArrayList<>(Arrays.asList(routingContext.request().getParam("skus").split(",")));
     Map<String, CtpMoneyRepresentation> responseBody = new HashMap<>();
@@ -140,7 +132,7 @@ public class BulkPriceHttpApi extends AbstractVerticle {
   }
 
   private void handleExtendCartWithExternalPrices(RoutingContext routingContext) {
-
+    // executed directly and locally since all nodes hold all prices
     try {
       JsonObject bodyJson = routingContext.getBody().toJsonObject();
       logger.info(bodyJson.toString());
@@ -195,7 +187,8 @@ public class BulkPriceHttpApi extends AbstractVerticle {
   }
 
   private void handleLoadJobSubmission(RoutingContext routingContext) {
-    vertx.eventBus().send(Topics.loadrequests, routingContext.getBodyAsString(), response -> {
+    // TODO this must be a publish to all nodes, not a send.
+    vertx.eventBus().send(Topics.loadrequests, routingContext.getBody().toJsonObject(), response -> {
       if (response.succeeded()) {
         JsonObject responseMessage = new JsonObject((response.result().body().toString()));
         routingContext.response()
