@@ -4,13 +4,13 @@ import com.commercetools.bulkpricer.apimodel.CtpExtensionRequestBody;
 import com.commercetools.bulkpricer.apimodel.CtpExtensionUpdateRequestedResponse;
 import com.commercetools.bulkpricer.apimodel.CtpMoneyRepresentation;
 import com.commercetools.bulkpricer.helpers.CorrelationId;
-import com.commercetools.bulkpricer.helpers.JsonUtils;
 import com.commercetools.bulkpricer.messages.PriceGroupDeleteRequest;
 import io.sphere.sdk.carts.Cart;
 import io.sphere.sdk.carts.LineItem;
 import io.sphere.sdk.carts.commands.updateactions.SetLineItemPrice;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -126,7 +126,7 @@ public class BulkPriceHttpApi extends AbstractVerticle {
       }
       routingContext.response()
         .putHeader("content-type", "application/json")
-        .setStatusCode(200).end(JsonUtils.toJsonString(responseBody));
+        .setStatusCode(200).end(Json.encodeToBuffer(responseBody));
     });
 
   }
@@ -134,9 +134,7 @@ public class BulkPriceHttpApi extends AbstractVerticle {
   private void handleExtendCartWithExternalPrices(RoutingContext routingContext) {
     // executed directly and locally since all nodes hold all prices
     try {
-      JsonObject bodyJson = routingContext.getBody().toJsonObject();
-      logger.info(bodyJson.toString());
-      CtpExtensionRequestBody extensionRequest = JsonUtils.readObject(bodyJson.toString(), CtpExtensionRequestBody.class);
+      CtpExtensionRequestBody extensionRequest = Json.decodeValue(routingContext.getBody(),CtpExtensionRequestBody.class);
       Cart cart = extensionRequest.getResource().getObj();
 
       CtpExtensionUpdateRequestedResponse extensionResponse = new CtpExtensionUpdateRequestedResponse();
@@ -163,7 +161,7 @@ public class BulkPriceHttpApi extends AbstractVerticle {
         routingContext.response()
           .putHeader("content-type", "application/json")
           .setStatusCode(200)
-          .end(JsonUtils.toJsonString(extensionResponse));
+          .end(Json.encodeToBuffer(extensionResponse));
       });
 
     } catch (DecodeException e) {

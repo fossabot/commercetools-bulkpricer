@@ -3,13 +3,13 @@ package com.commercetools.bulkpricer;
 import com.commercetools.bulkpricer.apimodel.CtpMoneyRepresentation;
 import com.commercetools.bulkpricer.helpers.CorrelationId;
 import com.commercetools.bulkpricer.helpers.CtpMetadataStorage;
-import com.commercetools.bulkpricer.helpers.JsonUtils;
 import com.commercetools.bulkpricer.helpers.MemoryUsage;
 import com.commercetools.bulkpricer.messages.*;
 import io.sphere.sdk.customobjects.CustomObject;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -50,19 +50,19 @@ public class BulkPriceProvider extends AbstractVerticle {
     CtpMetadataStorage.getAllStoredListMetadata().forEach(priceListMetadataCO -> {
         ShareablePriceList list = priceListMetadataCO.getValue();
         if (list.getGroupKey() != null && list.getCurrency() != null && list.getFileURL() != null) {
-          logger.info("triggering read of price list on startup (was in metadata store):" + JsonUtils.toJsonString(list));
+          logger.info("triggering read of price list on startup (was in metadata store):" + Json.encode(list));
           readRemotePricesAsyncSequential(
             list.getFileURL(), list.getCurrency(), list.getGroupKey(),
             CorrelationId.getDeliveryOptions());
         } else {
-          logger.warn("found incomplete price list metadata in storage: " + JsonUtils.toJsonString(list));
+          logger.warn("found incomplete price list metadata in storage: " + Json.encode(list));
         }
       }
     );
   }
 
   private void handleLookUpPrice(Message<JsonObject> message) {
-    PriceLookUpRequest priceLookUpRequest = JsonUtils.readObject(message, PriceLookUpRequest.class);
+    PriceLookUpRequest priceLookUpRequest = message.body().mapTo(PriceLookUpRequest.class);
     PriceLookUpResponse lookUpResponse = new PriceLookUpResponse();
 
     LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
@@ -109,7 +109,7 @@ public class BulkPriceProvider extends AbstractVerticle {
   }
 
   private void handleDeleteRequest(Message<JsonObject> message) {
-    PriceGroupDeleteRequest request = JsonUtils.readObject(message, PriceGroupDeleteRequest.class);
+    PriceGroupDeleteRequest request = message.body().mapTo(PriceGroupDeleteRequest.class);
     LocalMap<String, ShareablePriceList> sharedPrices = vertx.sharedData().getLocalMap("prices");
     if (sharedPrices.containsKey(request.groupKey)) {
       sharedPrices.remove(request.groupKey);
