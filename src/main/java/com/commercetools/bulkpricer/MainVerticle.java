@@ -18,8 +18,8 @@ public class MainVerticle extends AbstractVerticle {
   public void start(){
 
     // enable the core verx JSON facilities to work with CT JVM SDK models and conventions
-    SphereJsonUtils.decorateObjectMapper(Json.mapper);
-    SphereJsonUtils.decorateObjectMapper(Json.prettyMapper);
+    SphereJsonUtils.configureObjectMapper(Json.mapper);
+    SphereJsonUtils.configureObjectMapper(Json.prettyMapper);
 
     final List<AbstractVerticle> verticles = Arrays.asList(
       new BulkPriceProvider(),
