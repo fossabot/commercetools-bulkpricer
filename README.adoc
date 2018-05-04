@@ -1,3 +1,5 @@
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fnkuehn%2Fcommercetools-bulkpricer.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fnkuehn%2Fcommercetools-bulkpricer?ref=badge_shield)
+
 = A Bulk Price Cache for commercetools
 
 This is a vert.x based HTTP service providing an commercetools API extension.
@@ -84,3 +86,7 @@ Simply start the application with:
 
 Now point your browser at http://localhost:8080. Then you can make changes to the verticles and reload the browser.
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fnkuehn%2Fcommercetools-bulkpricer.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fnkuehn%2Fcommercetools-bulkpricer?ref=badge_large)
